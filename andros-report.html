@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Andros · Diagnostic Stratégique et Analyse Concurrentielle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --red: #D62828;
+    --red-dark: #A51E1E;
+    --gold: #F2B705;
+    --green: #4F8A3C;
+    --white: #FFFFFF;
+    --cream: #FDF8F2;
+    --orange: #E8651A;
+    --text: #1A1A1A;
+    --muted: #5C5C5C;
+    --light: #F4F0EA;
+    --border: rgba(214,40,40,0.1);
+    --radius: 16px;
+    --shadow-sm: 0 2px 12px rgba(0,0,0,0.05);
+    --shadow-md: 0 8px 36px rgba(0,0,0,0.09);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; line-height: 1.6; }
+  h1, h2, h3, h4, h5, .hero-title, .sh h2, nav, .tbtn, .stab { font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: rgba(255,255,255,0.93);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  }
+  .nav-logo img { height: 44px; width: auto; display: block; }
+  .nav-links { display: flex; gap: 0.1rem; list-style: none; }
+  .nav-links a {
+    text-decoration: none; color: var(--text); font-weight: 600;
+    font-size: 0.75rem; padding: 6px 12px; border-radius: 50px;
+    transition: background 0.18s, color 0.18s;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .nav-links a:hover { background: var(--red); color: #fff; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 22px; height: 2px; background: var(--red); border-radius: 2px; }
+
+  /* SECTIONS */
+  section { padding: 100px 2rem; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .wrap-sm { max-width: 760px; margin: 0 auto; }
+
+  /* Section header : always centered */
+  .sh { text-align: center; margin-bottom: 3.5rem; }
+  .sh .num {
+    display: inline-block; font-size: 0.68rem; font-weight: 800;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--red); background: rgba(214,40,40,0.08);
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 1rem;
+  }
+  .sh h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 900; letter-spacing: -0.6px; line-height: 1.12; margin-bottom: 0.6rem; }
+  .sh h2 span { color: var(--red); }
+  .sh p { font-size: 1rem; color: var(--muted); max-width: 620px; margin: 0 auto; line-height: 1.8; }
+  .bar { width: 48px; height: 4px; background: linear-gradient(90deg, var(--red), var(--gold)); border-radius: 3px; margin: 1rem auto 0; }
+
+  /* Cards */
+  .card {
+    background: #fff; border-radius: var(--radius); padding: 1.8rem;
+    border: 1px solid rgba(0,0,0,0.06); box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+  /* Grids */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; }
+  .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
+
+  /* Hypothesis notice */
+  .hypo-box {
+    background: rgba(242,183,5,0.08); border: 1.5px solid rgba(242,183,5,0.5);
+    border-radius: 12px; padding: 0.9rem 1.3rem; font-size: 0.82rem;
+    color: var(--text); margin-bottom: 2rem; text-align: center;
+  }
+  .hypo-box strong { color: #8a6400; }
+
+  /* Source notes */
+  .src { font-size: 0.72rem; color: #999; font-style: italic; margin-top: 0.5rem; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: linear-gradient(150deg, #FDF8F2 0%, #FFF3E8 50%, #FEF0E4 100%);
+    padding: 80px 2rem 3rem;
+  }
+  .hero-decor-tl {
+    position: absolute; top: 0; left: 0;
+    width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(242,183,5,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-decor-br {
+    position: absolute; bottom: 0; right: 0;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(214,40,40,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner {
+    display: grid; grid-template-columns: 1fr 420px; gap: 4rem;
+    align-items: center; max-width: 1080px; width: 100%; z-index: 2; position: relative;
+  }
+  .hero-tag {
+    display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em;
+    text-transform: uppercase; padding: 5px 14px; border-radius: 30px;
+    background: rgba(214,40,40,0.07); border: 1px solid rgba(214,40,40,0.18);
+    color: var(--red); margin-bottom: 1.6rem;
+  }
+  .hero-logo { margin-bottom: 1.8rem; }
+  .hero-logo img { height: 64px; width: auto; }
+  .hero-title {
+    font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 900; letter-spacing: -0.8px;
+    line-height: 1.1; color: var(--text); margin-bottom: 1.1rem;
+  }
+  .hero-title .accent { color: var(--red); display: block; }
+  .hero-subtitle { font-size: 0.95rem; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; }
+  .hero-cta {
+    display: inline-block; background: var(--red); color: #fff;
+    font-weight: 800; font-size: 0.9rem; padding: 13px 30px; border-radius: 50px;
+    text-decoration: none; transition: all 0.2s;
+    box-shadow: 0 6px 24px rgba(214,40,40,0.28);
+  }
+  .hero-cta:hover { background: var(--red-dark); transform: translateY(-2px); }
+  .hero-cta-ghost {
+    display: inline-block; margin-left: 1rem; color: var(--red); font-weight: 700;
+    font-size: 0.88rem; text-decoration: none;
+    border-bottom: 1.5px solid var(--red); padding-bottom: 1px;
+  }
+  .hero-stats { display: flex; gap: 2rem; margin-top: 2.2rem; padding-top: 1.6rem; border-top: 1px solid rgba(0,0,0,0.08); }
+  .hstat .n { font-size: 1.5rem; font-weight: 900; color: var(--red); line-height: 1; }
+  .hstat .l { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .hero-team { margin-top: 1.6rem; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .hero-team .tl { font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .tchip {
+    background: #fff; border: 1px solid rgba(214,40,40,0.15);
+    font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+  .hero-visual {
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .hero-visual-bg {
+    position: absolute; inset: 0; border-radius: 24px;
+    background: linear-gradient(135deg, rgba(214,40,40,0.06) 0%, rgba(242,183,5,0.08) 100%);
+  }
+  .hero-visual img {
+    position: relative; z-index: 2; max-height: 460px; max-width: 100%;
+    object-fit: contain; filter: drop-shadow(0 16px 48px rgba(0,0,0,0.14));
+  }
+
+  /* ── INTRO ── */
+  #intro { background: #fff; }
+  .intro-card h3 { font-size: 0.95rem; font-weight: 800; color: var(--red); margin-bottom: 0.6rem; }
+  .intro-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.75; }
+
+  /* ── GAMMES ── */
+  #gammes { background: var(--cream); }
+  .gamme-card { text-align: center; }
+  .gamme-card img { height: 100px; object-fit: contain; margin: 0 auto 1rem; display: block; }
+  .gamme-card .gc-badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 3px 10px; border-radius: 15px; margin-bottom: 0.6rem;
+  }
+  .gc-r { background: rgba(214,40,40,0.1); color: var(--red); }
+  .gc-g { background: rgba(79,138,60,0.12); color: var(--green); }
+  .gc-y { background: rgba(242,183,5,0.15); color: #8a6400; }
+  .gc-o { background: rgba(232,101,26,0.12); color: var(--orange); }
+  .gamme-card h3 { font-size: 0.97rem; font-weight: 900; margin-bottom: 0.5rem; }
+  .gamme-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+  .produits-section { margin-top: 3rem; }
+  .produits-section h3 { font-size: 1rem; font-weight: 800; margin-bottom: 1.2rem; text-align: center; color: var(--text); }
+  .pills { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; }
+  .pill {
+    background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 50px;
+    font-size: 0.82rem; font-weight: 600; padding: 6px 14px;
+    box-shadow: var(--shadow-sm); transition: border-color 0.18s;
+  }
+  .pill:hover { border-color: var(--red); }
+
+  /* ── PORTFOLIO ── */
+  #portfolio { background: #fff; }
+  .tab-row { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+  .tbtn {
+    padding: 8px 22px; border-radius: 30px; border: 2px solid var(--red);
+    background: transparent; color: var(--red); font-weight: 700;
+    cursor: pointer; font-size: 0.82rem; transition: all 0.18s;
+  }
+  .tbtn.on, .tbtn:hover { background: var(--red); color: #fff; }
+  .tpane { display: none; }
+  .tpane.on { display: block; }
+
+  /* BCG */
+  .bcg-container { max-width: 800px; margin: 0 auto; }
+  .bcg-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+  .bcg-axis-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  .bcg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; border: 1.5px solid rgba(0,0,0,0.1); border-radius: var(--radius); overflow: hidden; }
+  .bcg-cell { padding: 1.8rem; min-height: 190px; position: relative; }
+  .bcg-cell h4 { font-size: 0.95rem; font-weight: 900; margin-bottom: 0.4rem; }
+  .bcg-cell .bcg-sub { font-size: 0.8rem; color: var(--muted); line-height: 1.6; margin-bottom: 0.8rem; }
+  .bcg-badge { position: absolute; top: 1rem; right: 1rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 12px; }
+  .star-bg { background: #FFFDE7; }
+  .star-badge { background: rgba(251,192,45,0.25); color: #7a5c00; }
+  .cash-bg { background: #E8F5E9; }
+  .cash-badge { background: rgba(79,138,60,0.2); color: #2e6e1f; }
+  .qm-bg { background: #E3F2FD; }
+  .qm-badge { background: rgba(33,150,243,0.18); color: #1355a0; }
+  .dog-bg { background: #F5F5F5; }
+  .dog-badge { background: rgba(0,0,0,0.1); color: #555; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-size: 0.73rem; font-weight: 600; padding: 3px 9px;
+    border-radius: 20px; background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+  .bcg-x-row { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; margin-top: 0.4rem; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+  /* McKinsey */
+  .mck-wrap { overflow-x: auto; max-width: 900px; margin: 0 auto; }
+  .mck { width: 100%; border-collapse: separate; border-spacing: 5px; min-width: 560px; }
+  .mck th { font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; color: #fff; border-radius: 8px; }
+  .mck td { padding: 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; text-align: center; vertical-align: middle; }
+  .mck td.prod-cell { background: #fff; border: 1px solid rgba(214,40,40,0.1); text-align: left; font-weight: 700; font-size: 0.8rem; }
+  .th-red { background: var(--red); }
+  .th-grn { background: var(--green); }
+  .th-gold { background: #c8920a; }
+  .th-grey { background: #888; }
+  .invest-cell { background: #C8E6C9; color: #1B5E20; }
+  .select-cell { background: #FFF9C4; color: #6D4C41; }
+  .harv-cell { background: #FFCCBC; color: #BF360C; }
+  .mck-legend { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.2rem; flex-wrap: wrap; }
+  .mck-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600; }
+  .mck-legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+  /* Chart */
+  .chart-box { background: var(--cream); border-radius: var(--radius); padding: 2rem; max-width: 700px; margin: 0 auto; }
+  .chart-box h3 { font-size: 0.95rem; font-weight: 800; margin-bottom: 1.2rem; text-align: center; }
+  canvas { max-height: 320px; }
+
+  /* ── CONCURRENCE ── */
+  #concurrence { background: var(--cream); }
+  .comp-card { text-align: center; }
+  .comp-card .comp-name { font-size: 1rem; font-weight: 900; margin: 0.6rem 0 0.4rem; }
+  .comp-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+  .comp-border-r { border-top: 3px solid var(--red); }
+  .comp-border-g { border-top: 3px solid var(--green); }
+  .comp-border-y { border-top: 3px solid var(--gold); }
+
+  /* KPI table */
+  .kpi-section { margin-top: 3rem; }
+  .kpi-section h3 { font-size: 1.1rem; font-weight: 900; margin-bottom: 1.5rem; text-align: center; }
+  .kpi-table-wrap { overflow-x: auto; max-width: 900px; margin: 0 auto; }
+  .kpi-table { width: 100%; border-collapse: collapse; }
+  .kpi-table th { background: var(--red); color: #fff; padding: 12px 16px; font-size: 0.78rem; font-weight: 700; text-align: left; letter-spacing: 0.04em; }
+  .kpi-table th:first-child { border-radius: 10px 0 0 0; }
+  .kpi-table th:last-child { border-radius: 0 10px 0 0; }
+  .kpi-table td { padding: 11px 16px; font-size: 0.84rem; border-bottom: 1px solid rgba(0,0,0,0.06); vertical-align: top; }
+  .kpi-table tr:nth-child(even) td { background: rgba(214,40,40,0.025); }
+  .kpi-kpi { font-weight: 800; color: var(--text); }
+  .kpi-val { font-weight: 700; }
+  .kpi-andros { color: var(--red); }
+  .kpi-materne { color: var(--green); }
+  .kpi-charles { color: #8a6400; }
+
+  /* Forces table */
+  .forces-section { margin-top: 3rem; }
+  .forces-section h3 { font-size: 1.1rem; font-weight: 900; margin-bottom: 1.5rem; text-align: center; }
+  .forces-table-wrap { overflow-x: auto; max-width: 980px; margin: 0 auto; }
+  .forces-table { width: 100%; border-collapse: collapse; }
+  .forces-table thead th { background: var(--text); color: #fff; padding: 12px 14px; font-size: 0.78rem; font-weight: 700; text-align: left; letter-spacing: 0.03em; }
+  .forces-table thead th:first-child { border-radius: 10px 0 0 0; }
+  .forces-table thead th:last-child { border-radius: 0 10px 0 0; }
+  .forces-table td { padding: 12px 14px; font-size: 0.82rem; border-bottom: 1px solid rgba(0,0,0,0.07); vertical-align: top; line-height: 1.65; }
+  .forces-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+  .forces-table td.critere { font-weight: 800; color: var(--text); font-size: 0.8rem; }
+  .note-score { display: inline-block; width: 20px; height: 20px; border-radius: 50%; font-size: 0.68rem; font-weight: 900; line-height: 20px; text-align: center; margin-right: 4px; }
+  .score-h { background: #C8E6C9; color: #1B5E20; }
+  .score-m { background: #FFF9C4; color: #6D4C41; }
+  .score-l { background: #FFCCBC; color: #BF360C; }
+
+  /* Radar chart */
+  .radar-box { background: #fff; border-radius: var(--radius); padding: 2rem; max-width: 640px; margin: 2rem auto 0; }
+  .radar-box h3 { font-size: 0.95rem; font-weight: 800; margin-bottom: 1.2rem; text-align: center; }
+
+  /* ── SCP ── */
+  #scp { background: #fff; }
+  .scp-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+  .stab { padding: 8px 22px; border-radius: 30px; border: 2px solid rgba(214,40,40,0.3); background: transparent; color: var(--red); font-weight: 700; cursor: pointer; font-size: 0.82rem; transition: all 0.18s; }
+  .stab.on, .stab:hover { background: var(--red); color: #fff; border-color: var(--red); }
+  .spanel { display: none; }
+  .spanel.on { display: block; }
+
+  /* Segmentation */
+  .seg-wrap { max-width: 900px; margin: 0 auto; }
+  .seg-table { width: 100%; border-collapse: collapse; }
+  .seg-table th { background: var(--red); color: #fff; padding: 11px 14px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; text-align: left; }
+  .seg-table th:first-child { border-radius: 10px 0 0 0; }
+  .seg-table th:last-child { border-radius: 0 10px 0 0; }
+  .seg-table td { padding: 11px 14px; font-size: 0.82rem; border-bottom: 1px solid rgba(0,0,0,0.07); vertical-align: top; line-height: 1.6; }
+  .seg-table tr:nth-child(even) td { background: rgba(214,40,40,0.025); }
+  .seg-type { font-weight: 800; color: var(--text); }
+  .seg-list { margin: 0; padding: 0; list-style: none; }
+  .seg-list li { padding: 2px 0; font-size: 0.81rem; color: var(--muted); }
+  .seg-list li::before { content: '·'; margin-right: 6px; color: var(--red); font-weight: 900; }
+
+  /* Ciblage */
+  .cib-wrap { max-width: 900px; margin: 0 auto; }
+  .cib-table { width: 100%; border-collapse: collapse; }
+  .cib-table th { background: var(--text); color: #fff; padding: 12px 14px; font-size: 0.78rem; font-weight: 700; text-align: left; letter-spacing: 0.03em; }
+  .cib-table th:first-child { border-radius: 10px 0 0 0; }
+  .cib-table th:last-child { border-radius: 0 10px 0 0; }
+  .cib-table td { padding: 11px 14px; font-size: 0.82rem; border-bottom: 1px solid rgba(0,0,0,0.07); vertical-align: top; line-height: 1.65; }
+  .cib-table tr:nth-child(even) td { background: rgba(0,0,0,0.02); }
+  .crit-cell { font-weight: 800; font-size: 0.8rem; }
+  .strat-box { max-width: 900px; margin: 2rem auto 0; }
+  .strat-box h4 { font-size: 0.95rem; font-weight: 900; margin-bottom: 1rem; text-align: center; }
+  .strat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .strat-card { background: var(--cream); border-radius: var(--radius); padding: 1.4rem; border-left: 4px solid var(--red); }
+  .strat-card.materne { border-color: var(--green); }
+  .strat-card.charles { border-color: var(--gold); }
+  .strat-card h5 { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+  .strat-card .strat-name {
+    font-size: 0.85rem; font-weight: 900; margin-bottom: 0.5rem;
+    padding: 4px 10px; border-radius: 8px; display: inline-block;
+  }
+  .strat-r { background: rgba(214,40,40,0.12); color: var(--red); }
+  .strat-g { background: rgba(79,138,60,0.12); color: var(--green); }
+  .strat-y { background: rgba(242,183,5,0.15); color: #8a6400; }
+  .strat-card p { font-size: 0.8rem; color: var(--muted); line-height: 1.6; }
+
+  /* Positionnement */
+  .pos-wrap { max-width: 900px; margin: 0 auto; }
+  .pos-stmts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
+  .pos-stmt { background: var(--cream); border-radius: var(--radius); padding: 1.5rem; }
+  .pos-stmt .ps-brand { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.6rem; }
+  .pos-stmt .ps-claim { font-size: 0.85rem; line-height: 1.7; color: var(--muted); font-style: italic; margin-bottom: 0.6rem; }
+  .pos-stmt .ps-axes { font-size: 0.74rem; color: var(--muted); font-weight: 600; }
+  .pos-border-r { border-top: 3px solid var(--red); }
+  .pos-border-g { border-top: 3px solid var(--green); }
+  .pos-border-y { border-top: 3px solid var(--gold); }
+  .map-box { background: var(--cream); border-radius: var(--radius); padding: 2rem; }
+  .map-box h4 { font-size: 0.95rem; font-weight: 900; text-align: center; margin-bottom: 1.5rem; }
+  .map-box svg { display: block; margin: 0 auto; width: 100%; max-width: 640px; }
+
+  /* ── CONCLUSION ── */
+  #conclusion { background: linear-gradient(140deg, #D62828 0%, #8B0000 100%); }
+  #conclusion .sh .num { background: rgba(255,255,255,0.15); color: #fff; }
+  #conclusion .sh h2 { color: #fff; }
+  #conclusion .sh h2 span { color: var(--gold); }
+  #conclusion .sh p { color: rgba(255,255,255,0.78); }
+  #conclusion .bar { background: linear-gradient(90deg, var(--gold), rgba(255,255,255,0.5)); }
+  .ccards { margin-bottom: 2rem; }
+  .ccard {
+    background: rgba(255,255,255,0.1); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius); padding: 1.6rem;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .ccard:hover { background: rgba(255,255,255,0.17); transform: translateY(-3px); }
+  .ccard h4 { color: var(--gold); font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.7rem; }
+  .ccard p { color: rgba(255,255,255,0.84); font-size: 0.86rem; line-height: 1.7; }
+  .recos { display: flex; flex-direction: column; gap: 0.7rem; max-width: 860px; margin: 0 auto; }
+  .reco { background: rgba(255,255,255,0.08); border-left: 4px solid var(--gold); padding: 1rem 1.3rem; border-radius: 0 12px 12px 0; }
+  .reco strong { color: var(--gold); display: block; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
+  .reco p { color: rgba(255,255,255,0.88); font-size: 0.86rem; line-height: 1.65; }
+
+  /* ── EQUIPE ── */
+  #equipe { background: var(--cream); }
+  .tgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; max-width: 800px; margin: 0 auto; }
+  .tcard { background: #fff; border-radius: var(--radius); padding: 1.8rem 1.2rem; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: all 0.2s; }
+  .tcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--red); }
+  .tavatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 900; color: #fff; }
+  .ta-y { background: linear-gradient(135deg, var(--red), var(--red-dark)); }
+  .ta-j { background: linear-gradient(135deg, var(--green), #2d6a1e); }
+  .ta-f { background: linear-gradient(135deg, var(--gold), var(--orange)); }
+  .ta-t { background: linear-gradient(135deg, #7b2d8b, #5a1a6e); }
+  .tcard h3 { font-size: 0.97rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .tcard p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+  /* ── SOURCES ── */
+  #sources { background: #fff; }
+  .ref-list { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem; }
+  .ref { background: var(--cream); border-radius: 10px; padding: 0.85rem 1.2rem; border-left: 4px solid var(--red); font-size: 0.81rem; color: var(--muted); line-height: 1.55; }
+  .ref strong { color: var(--text); }
+
+  /* FOOTER */
+  footer { background: var(--text); color: rgba(255,255,255,0.5); text-align: center; padding: 2.2rem; font-size: 0.78rem; line-height: 1.8; }
+  footer img { height: 34px; margin-bottom: 0.8rem; filter: brightness(0) invert(1); opacity: 0.6; display: block; margin-left: auto; margin-right: auto; }
+  footer strong { color: var(--gold); }
+
+  /* QUIZ */
+  #quiz { background: var(--cream); }
+  .quiz-wrap { max-width: 760px; margin: 0 auto; }
+  .quiz-progress { display: flex; gap: 6px; margin-bottom: 2rem; justify-content: center; }
+  .quiz-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(214,40,40,0.15); transition: background 0.3s; flex-shrink: 0; }
+  .quiz-dot.done { background: var(--green); }
+  .quiz-dot.active { background: var(--red); }
+  .quiz-card { background: #fff; border-radius: var(--radius); padding: 2.2rem; border: 1px solid rgba(0,0,0,0.06); box-shadow: var(--shadow-md); }
+  .quiz-num { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); margin-bottom: 0.7rem; }
+  .quiz-q { font-size: 1.08rem; font-weight: 800; line-height: 1.4; margin-bottom: 1.5rem; font-family: 'Montserrat', sans-serif; }
+  .quiz-opts { display: flex; flex-direction: column; gap: 0.7rem; }
+  .quiz-opt {
+    padding: 0.9rem 1.2rem; border-radius: 12px; border: 2px solid rgba(214,40,40,0.18);
+    background: var(--cream); cursor: pointer; font-size: 0.9rem; font-weight: 600;
+    text-align: left; transition: all 0.18s; font-family: 'Inter', sans-serif;
+  }
+  .quiz-opt:hover { border-color: var(--red); background: rgba(214,40,40,0.04); }
+  .quiz-opt.correct { border-color: var(--green); background: rgba(79,138,60,0.08); color: #2e6e1f; }
+  .quiz-opt.wrong { border-color: var(--red); background: rgba(214,40,40,0.07); color: var(--red-dark); }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-feedback { margin-top: 1rem; font-size: 0.85rem; line-height: 1.6; padding: 0.8rem 1.1rem; border-radius: 10px; display: none; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { background: rgba(79,138,60,0.08); color: #2e6e1f; border-left: 3px solid var(--green); }
+  .quiz-feedback.ko { background: rgba(214,40,40,0.07); color: var(--red-dark); border-left: 3px solid var(--red); }
+  .quiz-next { margin-top: 1.2rem; padding: 10px 26px; border-radius: 50px; border: none; background: var(--red); color: #fff; font-weight: 800; font-size: 0.88rem; cursor: pointer; transition: all 0.18s; display: none; font-family: 'Montserrat', sans-serif; }
+  .quiz-next:hover { background: var(--red-dark); transform: translateY(-1px); }
+  .quiz-next.show { display: inline-block; }
+  .quiz-result { text-align: center; padding: 2.5rem 2rem; }
+  .quiz-score-circle { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-dark)); color: #fff; font-size: 2rem; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; box-shadow: 0 8px 28px rgba(214,40,40,0.3); font-family: 'Montserrat', sans-serif; }
+  .quiz-result h3 { font-size: 1.3rem; font-weight: 900; margin-bottom: 0.5rem; font-family: 'Montserrat', sans-serif; }
+  .quiz-result p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .quiz-restart { padding: 10px 26px; border-radius: 50px; border: none; background: var(--red); color: #fff; font-weight: 800; font-size: 0.88rem; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+
+  /* SCROLL REVEAL */
+  .rv { opacity: 0; transform: translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+  .rv.vis { opacity: 1; transform: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 1000px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+  }
+  @media (max-width: 900px) {
+    .g2, .g3, .g4, .strat-grid, .pos-stmts { grid-template-columns: 1fr 1fr; }
+    .tgrid { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; flex-direction: column; position: fixed; top: 64px; left: 0; right: 0; background: #fff; padding: 1rem 1.5rem; gap: 0.2rem; border-bottom: 1px solid var(--border); box-shadow: var(--shadow-md); }
+    .nav-links.open { display: flex; }
+    .hamburger { display: flex; }
+  }
+  @media (max-width: 600px) {
+    .g2, .g3, .g4, .strat-grid, .pos-stmts, .tgrid { grid-template-columns: 1fr; }
+    section { padding: 70px 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <a href="#hero" aria-label="Andros">
+    <img src="https://www.andros.fr/wp-content/uploads/2023/04/Andros-new-logo.svg" alt="Andros" style="height:44px">
+  </a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#intro">Introduction</a></li>
+    <li><a href="#gammes">Gammes</a></li>
+    <li><a href="#portfolio">Portefeuille</a></li>
+    <li><a href="#concurrence">Concurrence</a></li>
+    <li><a href="#scp">SCP</a></li>
+    <li><a href="#quiz">Quiz</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#equipe">Equipe</a></li>
+  </ul>
+  <div class="hamburger" id="ham"><span></span><span></span><span></span></div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-decor-tl"></div>
+  <div class="hero-decor-br"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-tag">Projet Master · ESSJ 2025-2026</div>
+      <div class="hero-logo">
+        <img src="https://www.andros.fr/wp-content/uploads/2023/04/Andros-new-logo.svg" alt="Logo Andros">
+      </div>
+      <h1 class="hero-title">
+        Diagnostic
+        <span class="accent">Strategique</span>
+        et Analyse Concurrentielle
+      </h1>
+      <p class="hero-subtitle">Etude approfondie du portefeuille produits, des positions concurrentielles et de la strategie SCP d'Andros, leader europeen de la transformation fruitiere.</p>
+      <div>
+        <a href="#intro" class="hero-cta">Explorer l'etude</a>
+        <a href="#equipe" class="hero-cta-ghost">L'equipe</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="n">2,2 Md€</div><div class="l">CA Groupe</div></div>
+        <div class="hstat"><div class="n">125+</div><div class="l">Pays</div></div>
+        <div class="hstat"><div class="n">9 600</div><div class="l">Employes</div></div>
+        <div class="hstat"><div class="n">1951</div><div class="l">Fondation</div></div>
+      </div>
+      <div class="hero-team">
+        <span class="tl">Auteurs :</span>
+        <span class="tchip">Yasmine</span>
+        <span class="tchip">Jade</span>
+        <span class="tchip">Florian</span>
+        <span class="tchip">Thea</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-visual-bg"></div>
+      <img src="https://www.andros.fr/wp-content/uploads/2023/05/FRUIT_250X460_PRODUIT_DROITE_ABRICOT_FRAMBOISE.png" alt="Desserts Fruitiers Andros">
+    </div>
+  </div>
+</section>
+
+<!-- INTRODUCTION -->
+<section id="intro">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">01 · Introduction</span>
+      <h2>Presentation <span>de l'etude</span></h2>
+      <div class="bar"></div>
+      <p>Cette etude mobilise les outils de la strategie d'entreprise pour analyser le portefeuille Andros, comparer ses positions concurrentielles et detailler sa strategie SCP sur le segment des Desserts Fruitiers.</p>
+    </div>
+    <div class="g2">
+      <div class="card intro-card rv">
+        <h3>Objectifs</h3>
+        <p>Evaluer le portefeuille produits d'Andros via les matrices BCG et McKinsey, benchmarker les performances face a Materne et Charles &amp; Alice sur le segment compote, et proposer des recommandations strategiques actionnables.</p>
+      </div>
+      <div class="card intro-card rv">
+        <h3>Methodologie</h3>
+        <p>Analyse secondaire fondee sur des rapports annuels, etudes de marche sectorielles et communications officielles des marques. Toute donnee estimee est clairement identifiee par la mention [Hypothese] et accompagnee de sa source de reference.</p>
+      </div>
+      <div class="card intro-card rv">
+        <h3>Le Groupe Andros</h3>
+        <p>Societe cooperative fondee en 1951 a Biars-sur-Cere (Lot). Leader europeen de la transformation fruitiere avec un chiffre d'affaires d'environ 2,2 milliards d'euros (Wikipedia / LSA Conso 2023). 9 600 employes, present dans plus de 125 pays. Le groupe commercialise confitures, compotes, desserts fruitiers refrigeres et produits de nutrition sportive.</p>
+      </div>
+      <div class="card intro-card rv">
+        <h3>Perimetre d'analyse</h3>
+        <p>L'analyse de portefeuille couvre l'ensemble du groupe. L'analyse concurrentielle et la strategie SCP se concentrent sur les <strong>Desserts Fruitiers (compotes)</strong>, premiere categorie de volume de la marque Andros en grande distribution.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAMMES -->
+<section id="gammes">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">02 · Gammes de produits</span>
+      <h2>L'univers <span>Andros</span></h2>
+      <div class="bar"></div>
+      <p>Andros structure son offre autour de quatre marques complementaires, couvrant l'ensemble des occasions de consommation fruitiere.</p>
+    </div>
+    <div class="g4 rv">
+      <div class="card gamme-card">
+        <img src="https://www.andros.fr/wp-content/uploads/2023/04/marque-andros.png" alt="Andros">
+        <span class="gc-badge gc-r">Marque principale</span>
+        <h3 style="color:var(--red)">Andros</h3>
+        <p>Desserts Fruitiers, confitures, purées de fruits. Positionnement naturalite et authenticite, distribue en grande surface alimentaire.</p>
+      </div>
+      <div class="card gamme-card">
+        <img src="https://www.andros.fr/wp-content/uploads/2023/05/carte-agv.png" alt="Andros Gourmand et Vegetal">
+        <span class="gc-badge gc-g">Desserts vegetaux</span>
+        <h3 style="color:var(--green)">Andros Gourmand et Vegetal</h3>
+        <p>Gamme de desserts patissiers 100 % vegetaux. Reponse a la demande croissante de produits plant-based gourmands.</p>
+      </div>
+      <div class="card gamme-card">
+        <img src="https://www.andros.fr/wp-content/uploads/2025/06/carte-as.png" alt="Andros Sport">
+        <span class="gc-badge gc-y">Nutrition sportive</span>
+        <h3 style="color:#8a6400">Andros Sport</h3>
+        <p>Sticks et gourdes energetiques a base de fruits pour accompagner les sportifs avant, pendant et apres l'effort.</p>
+      </div>
+      <div class="card gamme-card">
+        <img src="https://www.andros.fr/wp-content/uploads/2025/06/benuts-pots.png" alt="Be Nuts">
+        <span class="gc-badge gc-o">Purées de noix</span>
+        <h3 style="color:var(--orange)">Andros Be Nuts</h3>
+        <p>Purées d'amandes, cajou, noisettes et cacahuetes. Sans huile de palme ni sucres ajoutes. Positionne sur le snacking sain et proteique.</p>
+      </div>
+    </div>
+
+    <div class="produits-section rv">
+      <h3>Gamme Desserts Fruitiers : Coeur de Fruits (repertorie sur andros.fr)</h3>
+      <div class="pills">
+        <span class="pill">Pomme-Fraise</span>
+        <span class="pill">Pomme-Peche-Abricot</span>
+        <span class="pill">Pomme-Mangue</span>
+        <span class="pill">Pomme-Poire</span>
+        <span class="pill">Pomme-Banane</span>
+        <span class="pill">Pomme-Passion</span>
+        <span class="pill">Pomme-Abricot</span>
+        <span class="pill">Pomme-Pruneau</span>
+        <span class="pill">Pomme-Vanille</span>
+        <span class="pill">Ananas Morceaux</span>
+        <span class="pill">Peche Morceaux</span>
+        <span class="pill">Cerise Morceaux</span>
+        <span class="pill">Poire Morceaux</span>
+        <span class="pill">Mangue Morceaux</span>
+        <span class="pill">Pomme-Ananas-Citron Vert</span>
+        <span class="pill">Gamme Bio certifiee</span>
+        <span class="pill">Confitures variees</span>
+        <span class="pill">Andros Stick Sport</span>
+      </div>
+      <p class="src" style="text-align:center;margin-top:1rem">Source : andros.fr, pages produits consultees mai 2025</p>
+    </div>
+  </div>
+</section>
+
+<!-- PORTFOLIO -->
+<section id="portfolio">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">03 · Analyse de portefeuille</span>
+      <h2>Matrices BCG <span>et McKinsey</span></h2>
+      <div class="bar"></div>
+      <p>Evaluation strategique du portefeuille Andros selon le taux de croissance du marche, la part de marche relative et la force concurrentielle de chaque activite.</p>
+    </div>
+    <div class="hypo-box rv">
+      <strong>Note methodologique :</strong> Les positions dans les matrices s'appuient sur des donnees publiques disponibles (FranceAgriMer, Nielsen, rapports annuels) et sur des estimations academiques. Les elements non confirmés par une source publiee sont clairement identifies par la mention <strong>[Hypothèse]</strong>.
+    </div>
+    <div class="tab-row rv">
+      <button class="tbtn on" onclick="showTab('bcg',this)">Matrice BCG</button>
+      <button class="tbtn" onclick="showTab('mck',this)">Matrice McKinsey</button>
+      <button class="tbtn" onclick="showTab('chart',this)">Repartition du CA</button>
+    </div>
+
+    <!-- BCG -->
+    <div class="tpane on" id="tab-bcg">
+      <div class="bcg-container rv">
+        <div class="bcg-title-row">
+          <span class="bcg-axis-label">Taux de croissance eleve</span>
+          <span class="bcg-axis-label">Part de marche relative forte →</span>
+        </div>
+        <div class="bcg-grid">
+          <div class="bcg-cell qm-bg">
+            <span class="bcg-badge qm-badge">Dilemmes</span>
+            <h4 style="color:#1355a0">Forte croissance / Faible part</h4>
+            <p class="bcg-sub">Marches en forte expansion ou Andros ne dispose pas encore d'une position dominante. Des decisions d'investissement strategiques sont necessaires.</p>
+            <div class="tag-list">
+              <span class="tag">Andros Gourmand et Vegetal</span>
+              <span class="tag">Andros Be Nuts</span>
+              <span class="tag">Gamme Bio [Hypothese]</span>
+            </div>
+          </div>
+          <div class="bcg-cell star-bg">
+            <span class="bcg-badge star-badge">Etoiles</span>
+            <h4 style="color:#7a5c00">Forte croissance / Forte part</h4>
+            <p class="bcg-sub">Produits porteurs sur des segments en forte croissance ou Andros detient une position concurrentielle solide. Requierent des investissements continus.</p>
+            <div class="tag-list">
+              <span class="tag">Andros Sport</span>
+              <span class="tag">Coeur de Fruits exotiques [Hypothese]</span>
+            </div>
+          </div>
+          <div class="bcg-cell dog-bg">
+            <span class="bcg-badge dog-badge">Poids morts</span>
+            <h4 style="color:#555">Faible croissance / Faible part</h4>
+            <p class="bcg-sub">Marches matures a faible croissance ou la position concurrentielle est limitee. Candidats a la cession ou au repositionnement.</p>
+            <div class="tag-list">
+              <span class="tag">Confitures de table standard [Hypothese]</span>
+            </div>
+          </div>
+          <div class="bcg-cell cash-bg">
+            <span class="bcg-badge cash-badge">Vaches a lait</span>
+            <h4 style="color:#2e6e1f">Faible croissance / Forte part</h4>
+            <p class="bcg-sub">Produits matures dominant des marches stables. Generent des excedents de tresorerie reinvestis dans les Etoiles et les Dilemmes.</p>
+            <div class="tag-list">
+              <span class="tag">Desserts Fruitiers Classic</span>
+              <span class="tag">Confitures Bonne Maman</span>
+              <span class="tag">Mamie Nova</span>
+            </div>
+          </div>
+        </div>
+        <div class="bcg-x-row">
+          <span>Part de marche relative faible</span>
+          <span>Part de marche relative forte</span>
+        </div>
+        <p class="src" style="text-align:center;margin-top:0.8rem">Sources : Andros Rapport d'activite 2022 ; FranceAgriMer 2023 ; Nielsen GMS France 2023 [Hypotheses indiquees]</p>
+      </div>
+    </div>
+
+    <!-- McKinsey -->
+    <div class="tpane" id="tab-mck">
+      <div class="mck-wrap rv">
+        <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Attractivite sectorielle (axe horizontal) · Force concurrentielle Andros (axe vertical)</p>
+        <table class="mck">
+          <thead>
+            <tr>
+              <th class="th-red" style="min-width:160px">Force conc. / Attractivite</th>
+              <th class="th-grn">Attractivite forte</th>
+              <th class="th-gold">Attractivite moyenne</th>
+              <th class="th-grey">Attractivite faible</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="prod-cell">Force elevee</td>
+              <td class="invest-cell"><strong>Investir et croitre</strong><br><small>Desserts Fruitiers Classic, Bonne Maman</small></td>
+              <td class="invest-cell"><strong>Croissance selective</strong><br><small>Andros Sport, Gamme Bio</small></td>
+              <td class="select-cell"><strong>Proteger / Recolter</strong><br><small>Mamie Nova</small></td>
+            </tr>
+            <tr>
+              <td class="prod-cell">Force moyenne</td>
+              <td class="select-cell"><strong>Croissance selective</strong><br><small>Exotiques, formats nomades</small></td>
+              <td class="select-cell"><strong>Maintenir</strong><br><small>Be Nuts [Hypothese]</small></td>
+              <td class="harv-cell"><strong>Recolter / Ceder</strong><br><small>Confitures standard</small></td>
+            </tr>
+            <tr>
+              <td class="prod-cell">Force faible</td>
+              <td class="select-cell"><strong>Construire selectivement</strong><br><small>Andros Gourmand et Vegetal</small></td>
+              <td class="harv-cell"><strong>Recolter</strong><br><small>nc.</small></td>
+              <td class="harv-cell"><strong>Ceder</strong><br><small>[Hypothese]</small></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="mck-legend">
+          <div class="mck-legend-item"><div class="mck-legend-dot" style="background:#C8E6C9"></div>Investir / Croitre</div>
+          <div class="mck-legend-item"><div class="mck-legend-dot" style="background:#FFF9C4"></div>Croissance selective / Maintenir</div>
+          <div class="mck-legend-item"><div class="mck-legend-dot" style="background:#FFCCBC"></div>Recolter / Ceder</div>
+        </div>
+        <p class="src" style="text-align:center;margin-top:0.8rem">Criteres attractivite : taille du marche, taux de croissance, rentabilite, intensite concurrentielle. Criteres de force : PDM, marque, distribution, R&D. Sources : FranceAgriMer 2023 ; Nielsen 2023 [Hypotheses indiquees]</p>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="tpane" id="tab-chart">
+      <div class="chart-box rv">
+        <h3>Repartition estimee du CA par activite, Groupe Andros [Hypothese]</h3>
+        <canvas id="portfolioChart"></canvas>
+        <p class="src" style="text-align:center;margin-top:0.8rem">Source : Andros Rapport d'activite 2022 ; estimations sectorielles FranceAgriMer 2023 [Hypothese]</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCURRENCE -->
+<section id="concurrence">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">04 · Analyse concurrentielle</span>
+      <h2>Forces et Positions : <span>Desserts Fruitiers</span></h2>
+      <div class="bar"></div>
+      <p>Produit retenu : les <strong>Desserts Fruitiers (compotes)</strong> Andros. Analyse comparative face a Materne et Charles &amp; Alice, les deux concurrents directs en grande distribution.</p>
+    </div>
+    <div class="hypo-box rv">
+      <strong>Note :</strong> Les données financieres sont issues de rapports publics (Andros, Agrana Group, INSEE/Infogreffe, FranceAgriMer, Nielsen, LSA Conso). Les elements non confirmes par source publiee sont identifies par [Hypothese].
+    </div>
+
+    <div class="g3 rv">
+      <div class="card comp-card comp-border-r">
+        <img src="https://www.andros.fr/wp-content/uploads/2023/04/Andros-new-logo.svg" alt="Andros" style="height:50px;object-fit:contain;margin:0 auto 0.8rem;display:block">
+        <div class="comp-name" style="color:var(--red)">Andros</div>
+        <p>Leader du marche des compotes en France. Modele cooperatif, integration amont (producteurs de fruits), fort capital marque. Halo premium via Bonne Maman.</p>
+        <p class="src">Source : andros.fr ; FranceAgriMer 2023</p>
+      </div>
+      <div class="card comp-card comp-border-g">
+        <img src="logo-materne.png" alt="Materne" style="height:52px;object-fit:contain;margin:0 auto 0.8rem;display:block;max-width:160px">
+        <div class="comp-name" style="color:var(--green)">Materne</div>
+        <p>Deuxieme acteur du segment compotes en France. Filiale du groupe Agrana. CA France ~350 M€ en 2022 (95 000 tonnes). Innovation majeure avec le format Pom'Potes (gourde souple, lancement 1999). PDM format gourdes 2024 : 24,5 %.</p>
+        <p class="src">Source : Le Journal des Entreprises 2023 ; madeinfr.fr 2024 ; Agrana AR 2023</p>
+      </div>
+      <div class="card comp-card comp-border-y">
+        <img src="logo-charles-alice.svg" alt="Charles et Alice" style="height:52px;object-fit:contain;margin:0 auto 0.8rem;display:block;max-width:180px">
+        <div class="comp-name" style="color:#8a6400">Charles &amp; Alice</div>
+        <p>Challenger premium cree en 2011, specialise dans les compotes sans sucres ajoutes a positionnement artisanal et regional. CA &gt;160 M€ (2023). Leader valeur sur le segment sans sucres ajoutes avec 67 % de PDM (Linéaires 2023). CA en hausse de +5 % en 2023.</p>
+        <p class="src">Source : Credit Mutuel Equity 2023 ; Linéaires 2023 ; INSEE/Infogreffe 2022</p>
+      </div>
+    </div>
+
+    <!-- KPI Table -->
+    <div class="kpi-section rv">
+      <h3>Indicateurs de Performance Cles (KPI)</h3>
+      <div class="kpi-table-wrap">
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>Indicateur</th>
+              <th>Andros</th>
+              <th>Materne</th>
+              <th>Charles &amp; Alice</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="kpi-kpi">Chiffre d'affaires groupe</td>
+              <td class="kpi-val kpi-andros">~2,2 Md€ (2022)</td>
+              <td class="kpi-val kpi-materne">~350 M€ France (2022) · Agrana Group : ~1,4 Md€</td>
+              <td class="kpi-val kpi-charles">&gt;160 M€ (2023), +5 % vs 2022</td>
+              <td>Wikipedia/LSA Conso 2023 ; Le Journal des Entreprises 2023 ; Credit Mutuel Equity 2023</td>
+            </tr>
+            <tr>
+              <td class="kpi-kpi">Marche compotes GMS France</td>
+              <td class="kpi-val kpi-andros" colspan="3" style="text-align:center">Marche total &gt;1 Md€ : ambiant 696 M€ + refrigere 348 M€ · Format gourdes 467 M€ (2024)</td>
+              <td>madeinfr.fr 2024 ; FranceAgriMer 2023</td>
+            </tr>
+            <tr>
+              <td class="kpi-kpi">PDM format gourdes (valeur, 2024)</td>
+              <td class="kpi-val kpi-andros">20,7 %</td>
+              <td class="kpi-val kpi-materne">24,5 % (n°1 MDD = 45,6 %)</td>
+              <td class="kpi-val kpi-charles">67 % PDM valeur segment sans sucres ajoutes</td>
+              <td>madeinfr.fr 2024 ; Linéaires 2023</td>
+            </tr>
+            <tr>
+              <td class="kpi-kpi">Notoriete spontanee</td>
+              <td class="kpi-val kpi-andros">Tres elevee, leader historique</td>
+              <td class="kpi-val kpi-materne">Elevee, notamment via Pom'Potes</td>
+              <td class="kpi-val kpi-charles">En progression, niche premium</td>
+              <td>Kantar 2023 [H] ; Linéaires 2023</td>
+            </tr>
+            <tr>
+              <td class="kpi-kpi">Image de marque</td>
+              <td class="kpi-val kpi-andros">Famille, naturalite, authenticite, expertise fruitiere</td>
+              <td class="kpi-val kpi-materne">Praticite, fun, enfants, nomade</td>
+              <td class="kpi-val kpi-charles">Artisanal, regional, sante, premium</td>
+              <td>Analyse communications officielles marques 2023-2024</td>
+            </tr>
+            <tr>
+              <td class="kpi-kpi">Effectifs et implantation</td>
+              <td class="kpi-val kpi-andros">9 600 employes, 125+ pays, cooperative (non cotee)</td>
+              <td class="kpi-val kpi-materne">~900 salaries France, filiale Agrana Group (coté Vienne)</td>
+              <td class="kpi-val kpi-charles">~500 salaries, SAS non cotee. Fondee en 2011.</td>
+              <td>Wikipedia 2024 ; Le Journal des Entreprises 2023 ; Credit Mutuel Equity 2023</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Forces concurrentielles -->
+    <div class="forces-section rv">
+      <h3>Analyse des Forces Concurrentielles</h3>
+      <div class="forces-table-wrap">
+        <table class="forces-table">
+          <thead>
+            <tr>
+              <th style="width:160px">Critere (cf. cours)</th>
+              <th>Andros</th>
+              <th>Materne</th>
+              <th>Charles &amp; Alice</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="critere">Puissance commerciale<br><small style="font-weight:400;font-size:0.74rem;color:var(--muted)">Ventes, PDM, puissance de marque</small></td>
+              <td>
+                <span class="note-score score-h">H</span>
+                Leader du marche des compotes en grande surface alimentaire. PDM estimee ~36 % en volume (FranceAgriMer 2023 [H]). Marque reconnue, beneficiant du halo Bonne Maman sur la premiumisation. Distribution nationale et internationale dans 50+ pays.
+              </td>
+              <td>
+                <span class="note-score score-m">M</span>
+                Deuxieme acteur France, PDM estimee ~28 % (Nielsen [H]). Forte puissance en GMS grace au soutien du groupe Agrana. Pom'Potes = marque duale forte sur le segment enfants-snacking.
+              </td>
+              <td>
+                <span class="note-score score-l">F</span>
+                Challenger, PDM estimee ~13 % (Nielsen [H]). Puissance limitee en grande distribution classique mais presence forte en circuits specialises (bio, epicerie fine). Notoriete en progression.
+              </td>
+            </tr>
+            <tr>
+              <td class="critere">Experience<br><small style="font-weight:400;font-size:0.74rem;color:var(--muted)">Savoir-faire, conception, promotion, commercialisation</small></td>
+              <td>
+                <span class="note-score score-h">H</span>
+                Plus de 70 ans de savoir-faire en transformation fruitiere. Integration amont avec acces direct aux producteurs (cooperative). Expertise R&amp;D interne. Communication institutionnelle forte (Tour du Bon, partenariats sportifs). Maitrise des canaux de distribution GMS, e-commerce, export.
+              </td>
+              <td>
+                <span class="note-score score-h">H</span>
+                Expertise forte sur le segment snacking enfant. Innovation packaging pionniere (gourde souple Pom'Potes, 1999). Savoir-faire en commercialisation grande distribution et marketing jeunesse (communication TV, licences). Appartenance au groupe Agrana facilite l'acces aux matieres premieres.
+              </td>
+              <td>
+                <span class="note-score score-m">M</span>
+                Expertise sur les recettes artisanales et les fruits de saison. Savoir-faire en communication premium et en storytelling local (producteurs regionaux, terroir). Experience croissante en commercialisation circuits bio et epicerie de qualite. Limites sur la promotion media de masse.
+              </td>
+            </tr>
+            <tr>
+              <td class="critere">Dynamisme<br><small style="font-weight:400;font-size:0.74rem;color:var(--muted)">Lancements, structure gamme, taux de croissance</small></td>
+              <td>
+                <span class="note-score score-h">H</span>
+                Gamme tres large et structuree : Desserts Fruitiers, Gamme Bio, Andros Sport, Be Nuts, Andros Gourmand et Vegetal. Lancements reguliers documentés (andros.fr 2023-2024). Extension vers de nouveaux segments (vegetal, noix, sport). Croissance portee par l'international et l'innovation sante.
+              </td>
+              <td>
+                <span class="note-score score-h">H</span>
+                Fort dynamisme sur l'innovation format : gourde classique, gourde recharge, pots individuels, formats familiaux. Lancement de nouvelles saveurs chaque annee. Croissance soutenue sur le segment snack-enfant. Diversification vers les adultes (Materne Adultes). Source : LSA Conso 2023.
+              </td>
+              <td>
+                <span class="note-score score-m">M</span>
+                Taux de croissance eleve sur son segment (croissance forte sur le marche des compotes premium sans sucres ajoutes, source : Linéaires 2023 [H]). Lancements de nouvelles saveurs et formats (bocaux artisanaux, gamme reduite en sucre). Structure de gamme plus etroite mais coherente.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="src" style="text-align:center;margin-top:0.8rem">H = Force elevee · M = Force moyenne · F = Force faible. Sources : Andros.fr 2024 ; Agrana AR 2023 ; LSA Conso 2023 ; Linéaires 2023 ; FranceAgriMer 2023 [Hypotheses indiquees]</p>
+      </div>
+    </div>
+
+    <!-- Radar -->
+    <div class="radar-box rv">
+      <h3>Radar des forces concurrentielles [Hypothèse]</h3>
+      <canvas id="radarChart"></canvas>
+      <p class="src" style="text-align:center;margin-top:0.6rem">Scoring indicatif sur 100 base sur l'analyse qualitative des sources disponibles [Hypothese]</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCP -->
+<section id="scp">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">05 · Strategie SCP</span>
+      <h2>Segmentation · Ciblage · <span>Positionnement</span></h2>
+      <div class="bar"></div>
+      <p>Produit retenu : les <strong>Desserts Fruitiers / Compotes Andros</strong>. Analyse de la strategie SCP d'Andros et comparaison avec Materne et Charles &amp; Alice.</p>
+    </div>
+    <div class="scp-tabs rv">
+      <button class="stab on" onclick="showSCP('seg',this)">Segmentation</button>
+      <button class="stab" onclick="showSCP('cib',this)">Ciblage</button>
+      <button class="stab" onclick="showSCP('pos',this)">Positionnement</button>
+    </div>
+
+    <!-- SEGMENTATION -->
+    <div class="spanel on" id="scp-seg">
+      <div class="seg-wrap">
+        <p style="text-align:center;font-size:0.88rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.7">Liste des criteres de segmentation utilises par Andros et ses concurrents pour la famille produit Desserts Fruitiers / Compotes.</p>
+        <table class="seg-table rv">
+          <thead>
+            <tr>
+              <th style="width:160px">Type de critere</th>
+              <th>Criteres identifies</th>
+              <th>Application Andros</th>
+              <th>Application Materne</th>
+              <th>Application C&amp;A</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="seg-type">Demographique</td>
+              <td>
+                <ul class="seg-list">
+                  <li>Age (enfants, adultes, seniors)</li>
+                  <li>Taille du foyer</li>
+                  <li>Categorie socioprofessionnelle (CSP)</li>
+                  <li>Cycle de vie familial</li>
+                </ul>
+              </td>
+              <td>Familles avec enfants ; adultes CSP+ et -. Gamme tres large couvrant toutes les tranches d'age.</td>
+              <td>Enfants 3-12 ans prioritaires. Familles en phase active. Segmentation forte sur l'age.</td>
+              <td>Adultes 30-60 ans, CSP+. Foyers sans enfants ou enfants grands. Segment premium.</td>
+            </tr>
+            <tr>
+              <td class="seg-type">Psychographique</td>
+              <td>
+                <ul class="seg-list">
+                  <li>Valeurs : naturalite, authenticite</li>
+                  <li>Style de vie : sante, sport, praticite</li>
+                  <li>Sensibilite environnementale</li>
+                  <li>Rapport au plaisir et au gout</li>
+                </ul>
+              </td>
+              <td>Familles attachees a la naturalite, au gout authentique du fruit. Valeurs de partage et de sante quotidienne.</td>
+              <td>Families cherchant la praticite et le fun. Enfants actifs. Moins axe sante, plus axe convivialite et accessibilite.</td>
+              <td>Consommateurs eco-responsables, soucieux de leur sante, fuyant les additifs. Profil « consom'acteur ».</td>
+            </tr>
+            <tr>
+              <td class="seg-type">Comportemental</td>
+              <td>
+                <ul class="seg-list">
+                  <li>Occasion de consommation (petit-dejeuner, gouter, dessert, sport)</li>
+                  <li>Frequence d'achat</li>
+                  <li>Fidelite a la marque</li>
+                  <li>Avantage recherche (sante, gout, prix, praticite)</li>
+                  <li>Sensibilite au prix</li>
+                </ul>
+              </td>
+              <td>Consommation quotidienne (gouter, dessert). Acheteurs reguliers fideles a la marque. Avantage : gout naturel et qualite.</td>
+              <td>Snack nomade, boite a gouter, dejeuner scolaire. Achat d'impulsion et reutilisation (recharge). Avantage : praticite et format.</td>
+              <td>Consommation au dejeuner ou en dessert. Achat reflechi et planifie. Avantage : sante et sans sucres ajoutes.</td>
+            </tr>
+            <tr>
+              <td class="seg-type">Geographique</td>
+              <td>
+                <ul class="seg-list">
+                  <li>Marche domestique France</li>
+                  <li>Europe de l'Ouest</li>
+                  <li>Zones urbaines vs rurales</li>
+                  <li>Marchés export (Moyen-Orient, Ameriques)</li>
+                </ul>
+              </td>
+              <td>France nationale + 50+ pays a l'international. Distribution urbaine et rurale. Forte presence GMS province et Paris.</td>
+              <td>France et Europe de l'Ouest (Belgique, Espagne). Concentration GMS urbaines et periurbaines.</td>
+              <td>France, UK, Belgique. Concentration zones urbaines et circuits specialises (bio, epicerie fine).</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="src" style="text-align:center;margin-top:0.8rem">Sources : analyse des communications officielles Andros, Materne, Charles &amp; Alice 2023-2024 ; FranceAgriMer 2023 ; Linéaires 2023</p>
+      </div>
+    </div>
+
+    <!-- CIBLAGE -->
+    <div class="spanel" id="scp-cib">
+      <div class="cib-wrap">
+        <p style="text-align:center;font-size:0.88rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.7">Ciblage retenu par chaque marque pour chaque critere de segmentation identifie.</p>
+        <table class="cib-table rv">
+          <thead>
+            <tr>
+              <th style="width:160px">Critere</th>
+              <th>Andros</th>
+              <th>Materne</th>
+              <th>Charles &amp; Alice</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit-cell">Demographique</td>
+              <td>Toutes les familles avec enfants et adultes, toutes CSP. Cible tres large.</td>
+              <td>Familles avec enfants 3-12 ans. Cible concentree sur la jeunesse.</td>
+              <td>Adultes 30-60 ans, CSP+ sans enfants ou enfants grands.</td>
+            </tr>
+            <tr>
+              <td class="crit-cell">Psychographique</td>
+              <td>Consommateurs attaches a la naturalite et a l'authenticite fruitiere. Mais aussi sportifs (Andros Sport) et vegans (AGV).</td>
+              <td>Familles cherchant le fun et la facilite. Peu d'exigences sur la naturalite.</td>
+              <td>Consom'acteurs soucieux de leur sante, recherchant des produits sans compromis.</td>
+            </tr>
+            <tr>
+              <td class="crit-cell">Comportemental</td>
+              <td>Acheteurs reguliers multioccasions (gouter, dessert, sport, petit-dejeuner). Fidelite a la marque forte.</td>
+              <td>Snacking nomade, boite a gouter. Achat d'impulsion. Fidelite via le format Pom'Potes.</td>
+              <td>Achat planifie, frequence moderee, prix eleve accepte. Fidelite a la promesse sante.</td>
+            </tr>
+            <tr>
+              <td class="crit-cell">Geographique</td>
+              <td>France entiere + export international. Tous circuits de distribution.</td>
+              <td>France + Europe de l'Ouest. GMS national.</td>
+              <td>France, UK, Belgique. Circuits specialises urbains.</td>
+            </tr>
+            <tr>
+              <td class="crit-cell" style="background:rgba(214,40,40,0.04)"><strong>Strategie de ciblage</strong></td>
+              <td style="background:rgba(214,40,40,0.04)"><strong>Couverture globale</strong> : Andros s'adresse a plusieurs segments avec plusieurs produits differencies (Desserts Fruitiers, Gamme Bio, Andros Sport, Be Nuts, AGV).</td>
+              <td style="background:rgba(214,40,40,0.04)"><strong>Specialisation marche</strong> : Materne concentre l'essentiel de son offre sur le marche compote/snack fruitier pour les enfants et les familles, avec differents formats du meme produit.</td>
+              <td style="background:rgba(214,40,40,0.04)"><strong>Specialisation produit</strong> : Charles &amp; Alice propose une gamme coherente de compotes premium sans sucres ajoutes, adressee a des segments differents (adultes sante, foyers CSP+).</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="strat-box rv">
+          <h4>Synthese des strategies de ciblage</h4>
+          <div class="strat-grid">
+            <div class="strat-card">
+              <h5 style="color:var(--red)">Andros</h5>
+              <div class="strat-name strat-r">Couverture globale</div>
+              <p>Andros dessert plusieurs segments de marche avec plusieurs offres produits distinctes. Cette strategie maximise la couverture mais requiert des ressources importantes et peut generer une dilution du positionnement.</p>
+            </div>
+            <div class="strat-card materne">
+              <h5 style="color:var(--green)">Materne</h5>
+              <div class="strat-name strat-g">Specialisation marche</div>
+              <p>Materne couvre un marche specifique (compote / snack fruitier enfant) avec une gamme adaptee de formats. L'entreprise maitrise ce marche et s'y concentre pour maximiser sa PDM.</p>
+            </div>
+            <div class="strat-card charles">
+              <h5 style="color:#8a6400">Charles &amp; Alice</h5>
+              <div class="strat-name strat-y">Specialisation produit</div>
+              <p>Charles &amp; Alice propose ses compotes premium a differents segments de marche (adultes, sportifs, sante). Le produit reste constant dans sa promesse ; c'est la cible qui varie.</p>
+            </div>
+          </div>
+        </div>
+        <p class="src" style="text-align:center;margin-top:0.8rem">Sources : analyse communications officielles 2023-2024 ; sites web des marques ; Linéaires 2023 ; FranceAgriMer 2023</p>
+      </div>
+    </div>
+
+    <!-- POSITIONNEMENT -->
+    <div class="spanel" id="scp-pos">
+      <div class="pos-wrap">
+        <div class="pos-stmts rv">
+          <div class="pos-stmt pos-border-r">
+            <div class="ps-brand" style="color:var(--red)">Andros</div>
+            <div class="ps-claim">« Pour les familles qui souhaitent le meilleur de la nature, Andros propose des desserts fruitiers authentiques, issus d'un savoir-faire cooperatif de plus de 70 ans, parce que chaque moment en famille merite de vrais fruits. »</div>
+            <div class="ps-axes">Axes : Naturalite · Famille · Qualite · Expertise</div>
+            <p class="src">Source : analyse communication Andros 2023-2024 ; andros.fr</p>
+          </div>
+          <div class="pos-stmt pos-border-g">
+            <div class="ps-brand" style="color:var(--green)">Materne</div>
+            <div class="ps-claim">« Pour les familles actives, Materne rend la consommation de fruits facile et amusante a tout moment, avec des formats pratiques adaptes au rythme des enfants. »</div>
+            <div class="ps-axes">Axes : Praticite · Fun · Format nomade · Accessibilite</div>
+            <p class="src">Source : analyse communication Materne 2023 ; materne.fr ; LSA Conso 2023</p>
+          </div>
+          <div class="pos-stmt pos-border-y">
+            <div class="ps-brand" style="color:#8a6400">Charles &amp; Alice</div>
+            <div class="ps-claim">« Pour les adultes exigeants qui ne font pas de compromis sur leur sante, Charles &amp; Alice cree des compotes premium artisanales sans sucres ajoutes, fideles au fruit dans sa plus belle expression. »</div>
+            <div class="ps-axes">Axes : Sante · Premium · Artisanat · Authenticite regionale</div>
+            <p class="src">Source : analyse communication Charles &amp; Alice 2023 ; charlesalice.fr ; Linéaires 2023</p>
+          </div>
+        </div>
+
+        <div class="map-box rv">
+          <h4>Carte de positionnement perceptuel : Naturalite vs. Niveau de prix</h4>
+          <svg viewBox="0 0 680 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Fond quadrants -->
+            <rect x="60" y="30" width="270" height="210" fill="rgba(79,138,60,0.05)" rx="8"/>
+            <rect x="340" y="30" width="280" height="210" fill="rgba(242,183,5,0.06)" rx="8"/>
+            <rect x="60" y="250" width="270" height="220" fill="rgba(136,136,136,0.04)" rx="8"/>
+            <rect x="340" y="250" width="280" height="220" fill="rgba(232,101,26,0.04)" rx="8"/>
+            <!-- Axes -->
+            <line x1="60" y1="250" x2="620" y2="250" stroke="#D0D0D0" stroke-width="1.5"/>
+            <line x1="340" y1="30" x2="340" y2="470" stroke="#D0D0D0" stroke-width="1.5"/>
+            <!-- Fleches axes -->
+            <polygon points="620,245 632,250 620,255" fill="#D0D0D0"/>
+            <polygon points="335,30 340,18 345,30" fill="#D0D0D0"/>
+            <!-- Labels axes -->
+            <text x="68" y="268" font-size="11" fill="#AAAAAA" font-family="'Segoe UI',system-ui" font-weight="600">Prix bas</text>
+            <text x="570" y="268" font-size="11" fill="#AAAAAA" font-family="'Segoe UI',system-ui" font-weight="600">Prix eleve</text>
+            <text x="348" y="46" font-size="11" fill="#AAAAAA" font-family="'Segoe UI',system-ui" font-weight="600">Naturalite elevee</text>
+            <text x="348" y="464" font-size="11" fill="#AAAAAA" font-family="'Segoe UI',system-ui" font-weight="600">Naturalite faible</text>
+            <!-- Labels quadrants -->
+            <text x="75" y="58" font-size="10" fill="#C0C0C0" font-family="'Segoe UI',system-ui">Naturel accesssible</text>
+            <text x="420" y="58" font-size="10" fill="#C0C0C0" font-family="'Segoe UI',system-ui">Naturel premium</text>
+            <text x="75" y="460" font-size="10" fill="#C0C0C0" font-family="'Segoe UI',system-ui">Transforme/basique</text>
+            <text x="420" y="460" font-size="10" fill="#C0C0C0" font-family="'Segoe UI',system-ui">Transforme premium</text>
+            <!-- MDD -->
+            <circle cx="150" cy="340" r="28" fill="rgba(136,136,136,0.14)" stroke="#BBBBBB" stroke-width="2"/>
+            <text x="150" y="336" font-size="10" fill="#888" font-family="'Segoe UI',system-ui" font-weight="700" text-anchor="middle">MDD</text>
+            <text x="150" y="350" font-size="9" fill="#AAA" font-family="'Segoe UI',system-ui" text-anchor="middle">Marques propres</text>
+            <!-- Materne -->
+            <circle cx="210" cy="170" r="38" fill="rgba(79,138,60,0.14)" stroke="#4F8A3C" stroke-width="2.5"/>
+            <text x="210" y="165" font-size="12" fill="#4F8A3C" font-family="'Segoe UI',system-ui" font-weight="800" text-anchor="middle">Materne</text>
+            <text x="210" y="181" font-size="9" fill="#4F8A3C" font-family="'Segoe UI',system-ui" text-anchor="middle">Pratique · Accessible</text>
+            <!-- Andros -->
+            <circle cx="410" cy="110" r="48" fill="rgba(214,40,40,0.12)" stroke="#D62828" stroke-width="3"/>
+            <text x="410" y="105" font-size="13" fill="#D62828" font-family="'Segoe UI',system-ui" font-weight="900" text-anchor="middle">Andros</text>
+            <text x="410" y="122" font-size="9" fill="#D62828" font-family="'Segoe UI',system-ui" text-anchor="middle">Naturel · Qualite · Famille</text>
+            <!-- Bonne Maman -->
+            <circle cx="545" cy="100" r="30" fill="rgba(139,58,139,0.1)" stroke="#8B3A8B" stroke-width="2" stroke-dasharray="5,3"/>
+            <text x="545" y="96" font-size="10" fill="#8B3A8B" font-family="'Segoe UI',system-ui" font-weight="700" text-anchor="middle">Bonne</text>
+            <text x="545" y="110" font-size="10" fill="#8B3A8B" font-family="'Segoe UI',system-ui" font-weight="700" text-anchor="middle">Maman</text>
+            <text x="545" y="122" font-size="8" fill="#AAA" font-family="'Segoe UI',system-ui" text-anchor="middle">(halo Andros)</text>
+            <!-- Charles et Alice -->
+            <circle cx="530" cy="65" r="34" fill="rgba(212,160,0,0.12)" stroke="#d4a000" stroke-width="2.5"/>
+            <text x="530" y="60" font-size="11" fill="#8a6400" font-family="'Segoe UI',system-ui" font-weight="800" text-anchor="middle">Charles</text>
+            <text x="530" y="74" font-size="11" fill="#8a6400" font-family="'Segoe UI',system-ui" font-weight="800" text-anchor="middle">&amp; Alice</text>
+            <text x="530" y="88" font-size="9" fill="#AAA" font-family="'Segoe UI',system-ui" text-anchor="middle">Premium · Sante</text>
+            <!-- Legende -->
+            <rect x="62" y="490" width="556" height="1" fill="#eee"/>
+            <text x="340" y="500" font-size="8.5" fill="#BBBBBB" font-family="'Segoe UI',system-ui" text-anchor="middle">Taille du cercle = presence relative estimee sur le marche. Positions = perception estimee [Hypothese] · Source : analyse communications marques 2023-2024</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">06 · Quiz interactif</span>
+      <h2>Testez vos <span>connaissances</span></h2>
+      <div class="bar"></div>
+      <p>10 questions sur la strategie, le marche et les chiffres cles du Groupe Andros. Toutes les reponses sont issues des donnees de ce rapport.</p>
+    </div>
+    <div class="quiz-wrap rv">
+      <div class="quiz-progress" id="quizProgress"></div>
+      <div class="quiz-card" id="quizCard">
+        <!-- JS renders here -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">07 · Conclusion</span>
+      <h2>Synthese et <span>Recommandations</span></h2>
+      <div class="bar"></div>
+      <p>Principaux enseignements et recommandations strategiques pour soutenir la trajectoire de croissance d'Andros sur un marche en mutation.</p>
+    </div>
+    <div class="g3 ccards rv">
+      <div class="ccard">
+        <h4>Portefeuille</h4>
+        <p>Les Desserts Fruitiers Classic et Bonne Maman constituent les vaches a lait du groupe, generant l'essentiel de la tresorerie. Andros Sport et la Gamme Bio sont des etoiles a investir. Les segments vegetal (AGV) et Be Nuts representent des dilemmes a fort potentiel mais incertain.</p>
+      </div>
+      <div class="ccard">
+        <h4>Concurrence</h4>
+        <p>Andros detient la position dominante sur la naturalite et la notoriete. Materne concurrence efficacement sur la praticite et l'innovation format. Charles &amp; Alice progresse rapidement sur le creneau premium-sante, mettant sous pression le segment haut de gamme d'Andros.</p>
+      </div>
+      <div class="ccard">
+        <h4>Strategie SCP</h4>
+        <p>La couverture globale d'Andros est une force structurelle mais expose a une dilution du positionnement. L'axe famille-naturalite est le differenciateur le plus puissant de la marque. Le halo Bonne Maman reste un levier premium sous-exploite sur la categorie compotes.</p>
+      </div>
+    </div>
+    <div class="recos rv">
+      <div class="reco">
+        <strong>Recommandation 01 · Renforcement de la credibilite sante</strong>
+        <p>Accelerer le developpement et la visibilite de la gamme sans sucres ajoutes avec des certifications nutritionnelles (NutriScore A) afin de repondre directement a l'offre Charles &amp; Alice sur le segment adultes-sante.</p>
+      </div>
+      <div class="reco">
+        <strong>Recommandation 02 · Innovation format nomade</strong>
+        <p>Investir dans des formats de consommation on-the-go (gourdes recyclables, pots individuels resellables) pour defendre les parts de marche face a l'innovation permanente de Materne sur le segment snacking enfant-adulte.</p>
+      </div>
+      <div class="reco">
+        <strong>Recommandation 03 · Expansion internationale ciblee</strong>
+        <p>Capitaliser sur la puissance de production du groupe cooperatif pour accelerer l'export en Europe du Sud et au Moyen-Orient, ou les marches de snacking fruitier affichent une croissance superieure a 8 % par an [Hypothese, source : Euromonitor 2023].</p>
+      </div>
+      <div class="reco">
+        <strong>Recommandation 04 · Strategie de contenu digital</strong>
+        <p>Developper un dispositif editorial oriente provenance des fruits, savoir-faire cooperatif et moments familiaux authentiques pour creer du capital emotionnel aupres des parents millennials (25-40 ans), segment aujourd'hui sous-adresse par les communications Andros.</p>
+      </div>
+      <div class="reco">
+        <strong>Recommandation 05 · Rationalisation du portefeuille</strong>
+        <p>Ceder ou repositionner les activites a faible attractivite (poids morts) afin de reallouer les capacites d'investissement vers les dilemmes a plus fort potentiel de croissance (vegetal, nutrition, formats fonctionnels).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EQUIPE -->
+<section id="equipe">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">08 · Equipe</span>
+      <h2>L'equipe <span>de recherche</span></h2>
+      <div class="bar"></div>
+      <p>Etudiants en Mastere Strategie d'Entreprise et Developpement Commercial a l'ESSJ, conjuguant rigueur academique et approche operationnelle du marche.</p>
+    </div>
+    <div class="tgrid rv">
+      <div class="tcard">
+        <div class="tavatar ta-y">Y</div>
+        <h3>Yasmine</h3>
+        <p>Mastere Strategie d'Entreprise et Developpement Commercial · ESSJ</p>
+      </div>
+      <div class="tcard">
+        <div class="tavatar ta-j">J</div>
+        <h3>Jade</h3>
+        <p>Mastere Strategie d'Entreprise et Developpement Commercial · ESSJ</p>
+      </div>
+      <div class="tcard">
+        <div class="tavatar ta-f">F</div>
+        <h3>Florian</h3>
+        <p>Mastere Strategie d'Entreprise et Developpement Commercial · ESSJ</p>
+      </div>
+      <div class="tcard">
+        <div class="tavatar ta-t">T</div>
+        <h3>Thea</h3>
+        <p>Mastere Strategie d'Entreprise et Developpement Commercial · ESSJ</p>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:2rem;font-size:0.85rem;color:var(--muted);line-height:1.8" class="rv">
+      Etablissement : ESSJ · Programme : Mastere Strategie d'Entreprise et Developpement Commercial · Annee universitaire 2025-2026
+    </p>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section id="sources">
+  <div class="wrap">
+    <div class="sh rv">
+      <span class="num">09 · Bibliographie</span>
+      <h2>Sources et <span>Notes methodologiques</span></h2>
+      <div class="bar"></div>
+    </div>
+    <div class="hypo-box rv">
+      <strong>Important :</strong> Toutes les donnees identifiees par [Hypothese] sont des estimations construites a partir de donnees publiques et d'un raisonnement expert academique. Elles ne constituent pas une communication officielle du Groupe Andros.
+    </div>
+    <div class="ref-list rv">
+      <div class="ref"><strong>Wikipedia · Groupe Andros</strong> · Derniere consultation mai 2025 · Chiffre d'affaires (~2,2 Md€), effectifs (9 600), implantation geographique (125+ pays), parts de marche compotes refrigerees (62,4 %, 2017) et confitures (47 %).</div>
+      <div class="ref"><strong>madeinfr.fr · Marche des compotes GMS France 2024</strong> · Parts de marche format gourdes : MDD 45,6 %, Materne 24,5 %, Andros 20,7 %. Marche format gourdes : 467 M€. Marche total : ambiant 696 M€ + refrigere 348 M€.</div>
+      <div class="ref"><strong>Le Journal des Entreprises · Materne France 2023</strong> · CA Materne France ~350 M€ (2022), 900 salaries, 95 000 tonnes produites.</div>
+      <div class="ref"><strong>Credit Mutuel Equity · Charles &amp; Alice 2023</strong> · CA &gt;160 M€, 500 salaries, +5 % de croissance CA en 2023, fondation 2011.</div>
+      <div class="ref"><strong>Andros Group · Rapport d'activite 2022</strong> · andros.fr · Presentation des activites, structure cooperative, gammes commercialisees.</div>
+      <div class="ref"><strong>Andros France · Site officiel andros.fr</strong> · Pages produits consultees en mai 2025 · Repertoire complet des gammes et produits Desserts Fruitiers, Andros Sport, Be Nuts et Andros Gourmand et Vegetal.</div>
+      <div class="ref"><strong>FranceAgriMer · Observatoire des marches des fruits transformes</strong> · Rapport annuel 2023 · Volume et valeur du marche francais des compotes et desserts fruitiers.</div>
+      <div class="ref"><strong>Nielsen / NielsenIQ · Grands Circuits France GMS</strong> · Rapports categoriels, donnees de croissance segments compote et snacks fruitiers · 2022-2023.</div>
+      <div class="ref"><strong>Agrana Group · Annual Report 2023</strong> · agrana.com · Chiffre d'affaires et repartition geographique de la societe mere de Materne.</div>
+      <div class="ref"><strong>INSEE / Infogreffe</strong> · Bilans annuels Charles et Alice SAS · 2021-2022 · Donnees financieres disponibles au registre du commerce.</div>
+      <div class="ref"><strong>Kantar · BrandZ France 2023</strong> · Classements notoriete et capital marque, categorie alimentation et boissons.</div>
+      <div class="ref"><strong>LSA Conso / Lineaires 2023-2024</strong> · Presse professionnelle : lancements produits Materne, Charles et Alice et Andros, strategies promotionnelles, innovations packaging.</div>
+      <div class="ref"><strong>Euromonitor International · Packaged Food France 2023</strong> · Donnees de croissance marches snacking fruitier et compotes premium [Reference pour estimations].</div>
+      <div class="ref"><strong>Porter, M.E. (1980)</strong> · Competitive Strategy · The Free Press · Cadre theorique de l'analyse des forces concurrentielles.</div>
+      <div class="ref"><strong>Henderson, B.D. (1970)</strong> · The Product Portfolio · BCG Perspectives · Fondement theorique de la matrice BCG.</div>
+      <div class="ref"><strong>McKinsey et Company / GE (1971)</strong> · The McKinsey-GE Matrix · Analyse attractivite et force concurrentielle du portefeuille.</div>
+      <div class="ref"><strong>Kotler, P. et Keller, K.L. (2016)</strong> · Marketing Management, 15e edition · Pearson · Cadre methodologique SCP et construction de carte perceptuelle.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <img src="https://www.andros.fr/wp-content/uploads/2023/04/Andros-new-logo.svg" alt="Andros">
+  Copyright 2025-2026 · Yasmine · Jade · Florian · Thea<br>
+  <strong>ESSJ · Mastere Strategie d'Entreprise et Developpement Commercial</strong><br>
+  Etude academique a des fins pedagogiques uniquement. Les donnees [Hypothese] sont des estimations. Aucune affiliation officielle avec le Groupe Andros.
+</footer>
+
+<script>
+// Hamburger
+document.getElementById('ham').addEventListener('click', function(){
+  document.getElementById('navLinks').classList.toggle('open');
+});
+
+// Portfolio tabs
+function showTab(id, btn){
+  document.querySelectorAll('.tpane').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.tbtn').forEach(el => el.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+  if(id === 'chart') initPortfolio();
+}
+
+// SCP tabs
+function showSCP(id, btn){
+  document.querySelectorAll('.spanel').forEach(el => el.classList.remove('on'));
+  document.querySelectorAll('.stab').forEach(el => el.classList.remove('on'));
+  document.getElementById('scp-'+id).classList.add('on');
+  if(btn) btn.classList.add('on');
+}
+
+// Portfolio chart
+let portfolioInited = false;
+function initPortfolio(){
+  if(portfolioInited) return;
+  portfolioInited = true;
+  new Chart(document.getElementById('portfolioChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Desserts Fruitiers Classic','Bonne Maman (Confitures)','Mamie Nova (Produits laitiers)','Andros Sport et Gamme Bio','Exotiques et formats RTD','Be Nuts et autres'],
+      datasets:[{
+        data: [28, 24, 18, 12, 10, 8],
+        backgroundColor: ['#D62828','#F2B705','#4F8A3C','#E8651A','#8B3A8B','#AAAAAA'],
+        borderWidth: 3,
+        borderColor: '#FDF8F2'
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{ position:'right', labels:{ font:{ size:12, weight:'bold' }, padding:14 }},
+        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ' : ~' + ctx.parsed + ' % [Hypothese]' }}
+      },
+      cutout: '60%'
+    }
+  });
+}
+
+// Radar chart
+window.addEventListener('DOMContentLoaded', () => {
+  new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data:{
+      labels:['Puissance commerciale (PDM)','Notoriete de marque','Dynamisme innovation','Couverture distribution','Competitivite prix','Credibilite sante'],
+      datasets:[
+        { label:'Andros', data:[90,88,72,85,65,74], backgroundColor:'rgba(214,40,40,0.12)', borderColor:'#D62828', borderWidth:2.5, pointBackgroundColor:'#D62828', pointRadius:5 },
+        { label:'Materne', data:[70,80,86,90,88,58], backgroundColor:'rgba(79,138,60,0.11)', borderColor:'#4F8A3C', borderWidth:2.5, pointBackgroundColor:'#4F8A3C', pointRadius:5 },
+        { label:'Charles et Alice', data:[35,45,65,55,42,94], backgroundColor:'rgba(212,160,0,0.10)', borderColor:'#d4a000', borderWidth:2.5, pointBackgroundColor:'#d4a000', pointRadius:5 }
+      ]
+    },
+    options:{
+      scales:{
+        r:{
+          beginAtZero:true, max:100,
+          ticks:{ stepSize:20, font:{ size:10 }},
+          pointLabels:{ font:{ size:11, weight:'bold' }},
+          grid:{ color:'rgba(0,0,0,0.07)' }
+        }
+      },
+      plugins:{ legend:{ position:'bottom', labels:{ font:{ size:12, weight:'bold' }, padding:18 }}}
+    }
+  });
+
+  // Scroll reveal
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); });
+  }, { threshold: 0.07, rootMargin: '0px 0px -30px 0px' });
+  document.querySelectorAll('.rv').forEach(el => obs.observe(el));
+
+  // Quiz
+  const QUIZ = [
+    {
+      q: "Quel est le chiffre d'affaires approximatif du Groupe Andros ?",
+      opts: ["~800 M€","~1,2 Md€","~2,2 Md€","~3,5 Md€"],
+      ans: 2,
+      fb: "Le Groupe Andros realise un chiffre d'affaires d'environ 2,2 milliards d'euros, faisant de lui le leader europeen de la transformation fruitiere. Source : Wikipedia / LSA Conso 2023."
+    },
+    {
+      q: "Dans quelle ville le Groupe Andros a-t-il ete fonde en 1951 ?",
+      opts: ["Bordeaux","Biars-sur-Cere","Lyon","Toulouse"],
+      ans: 1,
+      fb: "Andros est une societe cooperative fondee en 1951 a Biars-sur-Cere, dans le departement du Lot. Source : andros.fr."
+    },
+    {
+      q: "Quelle etait la part de marche d'Andros sur les compotes refrigerees en France en 2017 ?",
+      opts: ["38,2 %","47,0 %","55,1 %","62,4 %"],
+      ans: 3,
+      fb: "En 2017, Andros detenait 62,4 % de part de marche sur le segment des compotes refrigerees en France. Source : Wikipedia Andros / LSA Conso."
+    },
+    {
+      q: "Dans quel quadrant BCG se situent les Desserts Fruitiers Classic d'Andros ?",
+      opts: ["Etoile","Dilemme","Vache a lait","Poids mort"],
+      ans: 2,
+      fb: "Les Desserts Fruitiers Classic sont des Vaches a lait : marche mature a faible croissance ou Andros detient une position dominante forte, generant l'essentiel de la tresorerie du groupe."
+    },
+    {
+      q: "Quel est le chiffre d'affaires de Materne France en 2022 ?",
+      opts: ["~120 M€","~220 M€","~350 M€","~600 M€"],
+      ans: 2,
+      fb: "Materne France a realise un chiffre d'affaires d'environ 350 M€ en 2022 pour 95 000 tonnes produites. Source : Le Journal des Entreprises 2023."
+    },
+    {
+      q: "Quelle est la part de marche valeur de Charles & Alice sur le segment compotes sans sucres ajoutes ?",
+      opts: ["23 %","41 %","58 %","67 %"],
+      ans: 3,
+      fb: "Charles & Alice detient 67 % de part de marche en valeur sur le segment des compotes sans sucres ajoutes, ce qui en fait le leader inconteste de cette niche premium. Source : Linéaires 2023."
+    },
+    {
+      q: "Quelle strategie de ciblage adopte Andros pour ses Desserts Fruitiers ?",
+      opts: ["Specialisation produit","Specialisation marche","Couverture globale","Concentration"],
+      ans: 2,
+      fb: "Andros adopte une strategie de Couverture globale : plusieurs offres differenciees (Desserts Fruitiers, Bio, Sport, Be Nuts, AGV) s'adressent a de multiples segments de marche distincts."
+    },
+    {
+      q: "Combien d'employes le Groupe Andros compte-t-il environ ?",
+      opts: ["3 200","5 800","9 600","14 000"],
+      ans: 2,
+      fb: "Le Groupe Andros emploie environ 9 600 personnes dans le monde, present dans plus de 125 pays. Source : Wikipedia 2024."
+    },
+    {
+      q: "Quel est le nom de la matrice strategique croisant attractivite sectorielle et force concurrentielle ?",
+      opts: ["Matrice BCG","Matrice SWOT","Matrice McKinsey","Matrice Ansoff"],
+      ans: 2,
+      fb: "La matrice McKinsey (aussi appelee matrice GE-McKinsey ou matrice 3x3) croise l'attractivite du secteur avec la force concurrentielle de l'entreprise. Elle complete la matrice BCG en affinant le diagnostic portefeuille."
+    },
+    {
+      q: "En quelle annee la marque Charles & Alice a-t-elle ete creee ?",
+      opts: ["1998","2003","2008","2011"],
+      ans: 3,
+      fb: "La marque Charles & Alice a ete creee en 2011, positionnant d'emblee sur le creneau des compotes premium sans sucres ajoutes a positionnement artisanal. Source : Credit Mutuel Equity 2023."
+    }
+  ];
+
+  let qIdx = 0, score = 0, answered = false;
+
+  function buildProgress(){
+    const el = document.getElementById('quizProgress');
+    el.innerHTML = QUIZ.map((_, i) => `<div class="quiz-dot${i < qIdx ? ' done' : (i === qIdx ? ' active' : '')}"></div>`).join('');
+  }
+
+  function renderQ(){
+    answered = false;
+    buildProgress();
+    const d = QUIZ[qIdx];
+    document.getElementById('quizCard').innerHTML = `
+      <div class="quiz-num">Question ${qIdx+1} / ${QUIZ.length}</div>
+      <div class="quiz-q">${d.q}</div>
+      <div class="quiz-opts" id="quizOpts">
+        ${d.opts.map((o,i) => `<button class="quiz-opt" onclick="pickOpt(this,${i})">${o}</button>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="quizFb"></div>
+      <button class="quiz-next" id="quizNext" onclick="nextQ()">${qIdx < QUIZ.length-1 ? 'Question suivante' : 'Voir les resultats'}</button>
+    `;
+  }
+
+  function pickOpt(btn, i){
+    if(answered) return;
+    answered = true;
+    const d = QUIZ[qIdx];
+    const opts = document.querySelectorAll('.quiz-opt');
+    opts.forEach(o => { o.disabled = true; });
+    const fb = document.getElementById('quizFb');
+    const nxt = document.getElementById('quizNext');
+    if(i === d.ans){
+      score++;
+      btn.classList.add('correct');
+      fb.className = 'quiz-feedback show ok';
+      fb.innerHTML = '<strong>Bonne reponse !</strong> ' + d.fb;
+    } else {
+      btn.classList.add('wrong');
+      opts[d.ans].classList.add('correct');
+      fb.className = 'quiz-feedback show ko';
+      fb.innerHTML = '<strong>Incorrect.</strong> ' + d.fb;
+    }
+    nxt.classList.add('show');
+  }
+
+  function nextQ(){
+    qIdx++;
+    if(qIdx >= QUIZ.length){ showResult(); return; }
+    renderQ();
+  }
+
+  function showResult(){
+    buildProgress();
+    const pct = Math.round(score/QUIZ.length*100);
+    let msg = score <= 3 ? 'Continue a approfondir tes connaissances sur Andros !' :
+              score <= 6 ? 'Bon debut ! Relis les sections cles du rapport pour progresser.' :
+              score <= 8 ? 'Tres bien ! Tu maitrise bien la strategie Andros.' :
+              'Excellent ! Tu es pret(e) pour la soutenance.';
+    document.getElementById('quizCard').innerHTML = `
+      <div class="quiz-result">
+        <div class="quiz-score-circle">${score}/${QUIZ.length}</div>
+        <h3>${pct >= 80 ? 'Excellent !' : pct >= 60 ? 'Bien joue !' : 'A ameliorer'}</h3>
+        <p>${msg}</p>
+        <button class="quiz-restart" onclick="restartQuiz()">Recommencer le quiz</button>
+      </div>
+    `;
+  }
+
+  function restartQuiz(){ qIdx = 0; score = 0; renderQ(); }
+
+  renderQ();
+});
+</script>
+</body>
+</html>
