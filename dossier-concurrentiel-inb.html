@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dossier concurrentiel — Pôle Supérieur Institut Nicolas Barré</title>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --panel:#FFFFFF;
+    --panel2:#F6F7F9;
+    --line:#E3E6EC;
+    --text:#111827;
+    --muted:#6B7280;
+    --accent:#6FA60E;
+    --accent-bg:#EEF7DC;
+    --mco:#D14B3F;
+    --mos:#2E86AB;
+    --mv:#D98C1B;
+    --mat:#6FA60E;
+    --indirect:#8B8FA3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:34px 22px 70px;}
+  h1{
+    font-family:'Barlow Condensed',Inter,sans-serif;
+    font-weight:700;
+    font-size:34px;
+    letter-spacing:.3px;
+    margin:0 0 4px;
+    color:var(--text);
+  }
+  h2{
+    font-family:'Barlow Condensed',Inter,sans-serif;
+    font-weight:700;
+    font-size:22px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    margin:42px 0 14px;
+    padding-bottom:8px;
+    border-bottom:3px solid var(--accent);
+    display:inline-block;
+  }
+  .sub{color:var(--muted);font-size:14px;margin-bottom:6px;}
+  .meta{color:var(--muted);font-size:12.5px;margin-bottom:26px;}
+
+  /* ---- Nav tabs ---- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 0;border-bottom:1px solid var(--line);padding-bottom:0;}
+  .tab{
+    padding:9px 16px;border-radius:10px 10px 0 0;
+    background:var(--panel2);
+    border:1px solid var(--line);border-bottom:none;
+    font-size:13.5px;font-weight:600;color:var(--muted);
+    cursor:pointer;
+  }
+  .tab.active{background:#fff;color:var(--text);border-bottom:3px solid var(--accent);margin-bottom:-1px;}
+  .section{display:none;}
+  .section.active{display:block;}
+
+  /* ---- Legend chips ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:18px;}
+  .chip{
+    display:flex;align-items:center;gap:7px;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:7px 14px;
+    font-size:13px;
+    cursor:pointer;
+    user-select:none;
+    transition:.15s;
+  }
+  .chip.active{box-shadow:0 0 0 2px var(--accent) inset;background:#fff;}
+  .chip:hover{border-color:var(--accent);}
+  .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+
+  /* ---- Layout chart + panel ---- */
+  .layout{display:grid;grid-template-columns:1fr 320px;gap:18px;}
+  @media (max-width:880px){.layout{grid-template-columns:1fr;}}
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px 14px 8px;
+    box-shadow:0 1px 3px rgba(17,24,39,.04);
+  }
+  .panel-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+    min-height:300px;
+    box-shadow:0 1px 3px rgba(17,24,39,.04);
+  }
+  .panel-card h3{margin:6px 0 10px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.4px;font-size:18px;color:var(--text);}
+  .panel-card .field{font-size:13px;color:var(--muted);margin:6px 0;}
+  .panel-card .field b{color:var(--text);font-weight:600;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px;}
+  .stars{color:#D98C1B;letter-spacing:1px;font-size:15px;}
+  svg{width:100%;height:auto;display:block;}
+  .axis-label{font-size:11px;fill:var(--muted);font-family:'Inter',sans-serif;}
+  .gridline{stroke:var(--line);stroke-width:1;}
+  .node{cursor:pointer;stroke:#fff;stroke-width:1.5;transition:opacity .15s;}
+  .node.dim{opacity:.10;}
+  .node.inb{stroke:#111827;stroke-width:2.5;}
+  .glabel{font-size:10.5px;fill:var(--text);font-family:'Inter',sans-serif;pointer-events:none;}
+  .empty-hint{color:var(--muted);font-size:13px;line-height:1.6;}
+
+  /* ---- Tables ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0 8px;background:#fff;}
+  thead th{
+    background:var(--panel2);
+    color:var(--text);
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:.3px;
+    text-align:left;
+    padding:10px 10px;
+    border-bottom:2px solid var(--line);
+  }
+  tbody td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:hover{background:var(--panel2);}
+  tbody tr.inb-row{background:var(--accent-bg);font-weight:600;}
+  .filiere-pill{display:inline-block;padding:2px 9px;border-radius:7px;font-size:11px;font-weight:700;color:#fff;}
+  .stars-cell{color:#D98C1B;letter-spacing:1px;}
+
+  /* ---- Score table ---- */
+  .score-cell{text-align:center;font-weight:600;}
+  .score-total{font-weight:800;background:var(--accent-bg);text-align:center;border-radius:6px;}
+  .legend-note{font-size:12px;color:var(--muted);margin-top:8px;}
+
+  .footer-note{margin-top:24px;color:var(--muted);font-size:12px;line-height:1.7;border-top:1px solid var(--line);padding-top:16px;}
+  .callout{
+    background:var(--accent-bg);
+    border:1px solid #D8E9B8;
+    border-radius:12px;
+    padding:14px 18px;
+    font-size:13.5px;
+    margin:16px 0;
+    color:#3C5C0A;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Dossier concurrentiel — Pôle Supérieur Institut Nicolas Barré</h1>
+  <div class="sub">Zone de chalandise : 30 minutes autour d'Armentières (métropole lilloise + secteur Flandres)</div>
+  <div class="meta">Sources : carnet d'adresses officiel CRIJ Hauts-de-France (BTS MCO, MOS, Maintenance des Véhicules, Maintenance des Matériels) + analyse de proximité terrain. Doublons fusionnés.</div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="mapping">Mapping interactif</div>
+    <div class="tab" data-tab="tables">Tableaux par filière</div>
+    <div class="tab" data-tab="scoring">Scoring concurrentiel</div>
+  </div>
+
+  <!-- ===================== SECTION 1 : MAPPING ===================== -->
+  <div class="section active" id="sec-mapping">
+    <h2>Carte concurrentielle</h2>
+    <div class="legend" id="legend"></div>
+    <div class="layout">
+      <div class="card">
+        <svg id="chart" viewBox="0 0 900 560"></svg>
+      </div>
+      <div class="panel-card" id="panel">
+        <div class="empty-hint">👆 Cliquez sur une bulle pour afficher la fiche détaillée, ou sur les filtres pour isoler une filière.</div>
+      </div>
+    </div>
+    <div class="callout">💡 Sur la filière <b>Maintenance des Matériels</b> (construction/manutention), aucun concurrent n'est recensé dans la zone des 30 minutes : l'INB y occupe une position quasi-captive.</div>
+  </div>
+
+  <!-- ===================== SECTION 2 : TABLEAUX ===================== -->
+  <div class="section" id="sec-tables">
+    <h2>BTS Management Commercial Opérationnel (MCO)</h2>
+    <table id="tbl-mco"></table>
+
+    <h2>BTS Management Opérationnel de la Sécurité (MOS)</h2>
+    <table id="tbl-mos"></table>
+
+    <h2>BTS Maintenance des Véhicules</h2>
+    <table id="tbl-mv"></table>
+
+    <h2>BTS Maintenance des Matériels (construction et manutention)</h2>
+    <div class="callout">Aucun concurrent recensé dans la zone des 30 minutes autour d'Armentières. Le concurrent le plus proche (Lycée pro Jean Bertin, Bruay-la-Buissière) se situe hors zone (~40-45 min).</div>
+
+    <h2>Concurrence indirecte</h2>
+    <table id="tbl-indirect"></table>
+  </div>
+
+  <!-- ===================== SECTION 3 : SCORING ===================== -->
+  <div class="section" id="sec-scoring">
+    <h2>Tableau de scoring concurrentiel</h2>
+    <div class="legend-note">Notation de 1 (faible) à 5 (fort) sur 5 critères pondérés : Proximité géographique, Notoriété/marque, Attractivité prix, Offre alternance, Capacité de recrutement régional. Score total /25.</div>
+    <table id="tbl-score"></table>
+  </div>
+
+  <div class="footer-note">
+    Carte et tableaux construits à partir du carnet d'adresses officiel CRIJ Hauts-de-France croisé avec l'analyse de proximité terrain (zone 30 min : Armentières, La Chapelle-d'Armentières, Nieppe, Bailleul, Hazebrouck, Pérenchies, Lambersart, Lomme, Lille, Loos, Tourcoing, Roubaix, Marcq-en-Barœul, Villeneuve-d'Ascq). Distances estimées en temps de trajet routier. Document à visée stratégique interne — données à vérifier/actualiser auprès des établissements pour usage officiel (Parcoursup, dossiers d'orientation).
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const data = [
+  {name:"Institut Nicolas Barré", filiere:"INB", dist:0, menace:0, intensite:14, ville:"Armentières", type:"BTS MCO / MV / MOS / Maintenance Matériels", note:"Référence — point zéro de la carte", isInb:true},
+
+  // MCO
+  {name:"Enseignement Supérieur Saint Jude (ESSJ)", filiere:"MCO", dist:3, menace:5, intensite:9, ville:"Armentières", type:"BTS/Bachelor privé", note:"Concurrent direct à 3 min — recrute le même bassin de bacheliers locaux."},
+  {name:"Lycée Paul Hazard", filiere:"MCO", dist:5, menace:5, intensite:9, ville:"Armentières", type:"BTS public", note:"Public, gratuit, très proche — forte attractivité pour familles modestes."},
+  {name:"Université Catholique de Lille", filiere:"MCO", dist:25, menace:5, intensite:9, ville:"Lille", type:"BTS/Bachelor/Licence", note:"Marque forte, large gamme de poursuites d'études, réseau alumni puissant."},
+  {name:"Pigier Lille", filiere:"MCO", dist:25, menace:4, intensite:7, ville:"Lille", type:"BTS, Bachelor", note:"École de commerce reconnue, communication marketing soutenue."},
+  {name:"ESUP Lille", filiere:"MCO", dist:25, menace:4, intensite:7, ville:"Lille", type:"BTS, Bachelor", note:"Offre BTS/Bachelor concurrente en cœur de métropole."},
+  {name:"Campus Eductive Lille", filiere:"MCO", dist:25, menace:4, intensite:6, ville:"Lille", type:"Bachelor, Mastère", note:"Positionnement Bachelor/Mastère, cible un peu différente mais chevauchement possible."},
+  {name:"IDRAC Business School", filiere:"MCO", dist:25, menace:3, intensite:5, ville:"Lille", type:"BTS, Bachelor", note:"École de commerce premium, tarifs plus élevés."},
+  {name:"ISEFAC Lille", filiere:"MCO", dist:25, menace:3, intensite:4, ville:"Lille", type:"BTS, Bachelor", note:"Concurrence modérée, notoriété locale moindre."},
+  {name:"Ipac Bachelor Factory", filiere:"MCO", dist:25, menace:2, intensite:3, ville:"Lille", type:"Bachelor", note:"Cible Bachelor, recoupement partiel avec le BTS MCO."},
+  {name:"EFAB Lille", filiere:"MCO", dist:25, menace:2, intensite:3, ville:"Lille", type:"Bachelor", note:"Faible recoupement direct avec le BTS."},
+  {name:"Groupe Alternance Lille", filiere:"MCO", dist:20, menace:3, intensite:5, ville:"Lezennes", type:"BTS apprentissage", note:"Réseau national, fort en alternance — concurrent sur le format pro."},
+  {name:"IFAG Lille", filiere:"MCO", dist:25, menace:3, intensite:4, ville:"Lille", type:"BTS/Bachelor", note:"École de gestion, offre BTS/Bachelor en alternance."},
+  {name:"Maestris BTS Lille", filiere:"MCO", dist:25, menace:3, intensite:4, ville:"Euralille", type:"BTS", note:"Spécialiste BTS, positionnement central Euralille très accessible."},
+  {name:"Ecosup Commerce", filiere:"MCO", dist:15, menace:3, intensite:4, ville:"Tourcoing", type:"BTS", note:"Plus proche géographiquement qu'il n'y paraît (zone Tourcoing)."},
+  {name:"Lycée Jean Perrin", filiere:"MCO", dist:15, menace:3, intensite:4, ville:"Lambersart", type:"BTS public", note:"Public, gratuit, bon ancrage local."},
+  {name:"Lycée Raymond Queneau", filiere:"MCO", dist:20, menace:2, intensite:3, ville:"Villeneuve-d'Ascq", type:"BTS public", note:"Concurrence diffuse, zone Villeneuve-d'Ascq."},
+  {name:"Campus Pro Euralille", filiere:"MCO", dist:25, menace:2, intensite:3, ville:"Lille", type:"BTS apprentissage", note:"Offre apprentissage centrale, concurrence sur le format alternance."},
+
+  // MOS
+  {name:"Lycée Ozanam", filiere:"MOS", dist:25, menace:3, intensite:5, ville:"Lille", type:"BTS MOS", note:"Concurrent direct sur la sécurité, positionné en cœur de métropole."},
+  {name:"Lycée Saint-Rémi", filiere:"MOS", dist:25, menace:3, intensite:5, ville:"Roubaix", type:"BTS MOS", note:"Établissement privé catholique, offre sécurité comparable."},
+  {name:"Lycée polyvalent Jean Moulin", filiere:"MOS", dist:25, menace:3, intensite:4, ville:"Roubaix", type:"BTS MOS public", note:"Public, gratuit — alternative sérieuse pour les familles."},
+  {name:"AFTRAL / ISTELI Lille", filiere:"MOS", dist:20, menace:2, intensite:3, ville:"Wasquehal", type:"Sécurité/Transport-Logistique", note:"Positionnement transport/sécurité, recoupement partiel."},
+
+  // MV
+  {name:"Lycée Gustave Eiffel", filiere:"MV", dist:5, menace:4, intensite:7, ville:"Armentières", type:"BTS industriels / Maintenance véhicules", note:"Le plus proche concurrent automobile — même bassin de recrutement immédiat."},
+  {name:"Lycée Alfred Mongy", filiere:"MV", dist:20, menace:4, intensite:6, ville:"Marcq-en-Barœul", type:"BTS Maintenance Véhicules", note:"Lycée des métiers de l'automobile, offre complète (opt. A/B/C)."},
+  {name:"GARAC Hauts-de-France", filiere:"MV", dist:25, menace:3, intensite:4, ville:"Métropole lilloise", type:"BTS Maintenance Véhicules", note:"École spécialisée automobile, réseau national reconnu."},
+  {name:"CFA Automobile Hauts-de-France", filiere:"MV", dist:25, menace:2, intensite:3, ville:"Métropole lilloise", type:"CFA Automobile", note:"Offre en apprentissage, concurrence sur le format alternance."},
+
+  // INDIRECT
+  {name:"CNAM Hauts-de-France", filiere:"INDIRECT", dist:25, menace:2, intensite:3, ville:"Lille", type:"Hybride / continue", note:"Formation continue/hybride, cible légèrement différente (salariés, reprise d'études)."},
+  {name:"OpenClassrooms", filiere:"INDIRECT", dist:0, menace:2, intensite:3, ville:"100% en ligne", type:"En ligne", note:"Concurrence délocalisée, séduit les profils autonomes."},
+  {name:"Studi", filiere:"INDIRECT", dist:0, menace:2, intensite:3, ville:"100% en ligne", type:"En ligne", note:"Concurrence délocalisée sur les BTS à distance."},
+  {name:"ISCOD", filiere:"INDIRECT", dist:0, menace:1, intensite:2, ville:"En ligne/alternance", type:"En ligne", note:"Alternance à distance, menace plus faible mais croissante."},
+  {name:"ENACO", filiere:"INDIRECT", dist:0, menace:1, intensite:2, ville:"Roubaix / en ligne", type:"En ligne", note:"École de commerce en ligne, recoupement partiel avec le MCO."},
+  {name:"IUT de Lille - Tourcoing", filiere:"INDIRECT", dist:25, menace:4, intensite:6, ville:"Tourcoing", type:"BUT", note:"Le BUT (3 ans) attire les meilleurs profils bac général qui hésiteraient avec un BTS."},
+  {name:"IUT de Lille", filiere:"INDIRECT", dist:30, menace:4, intensite:6, ville:"Lille", type:"BUT", note:"Idem — concurrence sur l'orientation post-bac des meilleurs dossiers."}
+];
+
+const colors = {MCO:"#D14B3F", MOS:"#2E86AB", MV:"#D98C1B", MAT:"#6FA60E", INDIRECT:"#8B8FA3", INB:"#111827"};
+const labels = {MCO:"BTS MCO", MOS:"BTS MOS (sécurité)", MV:"Maintenance Véhicules", INDIRECT:"Concurrence indirecte", INB:"Institut Nicolas Barré"};
+
+// ===================== TABS =====================
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('sec-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+// ===================== CHART =====================
+const svgNS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('chart');
+const W=900,H=560, M={l:55,r:25,t:25,b:55};
+const xMax=32, yMax=5.6;
+function X(d){ return M.l + (d/xMax)*(W-M.l-M.r); }
+function Y(m){ return H-M.b - (m/yMax)*(H-M.t-M.b); }
+function el(tag, attrs){ const e=document.createElementNS(svgNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+for(let m=0;m<=5;m++){
+  const y=Y(m);
+  svg.appendChild(el('line',{x1:M.l,x2:W-M.r,y1:y,y2:y,class:'gridline'}));
+  const t=el('text',{x:M.l-10,y:y+4,class:'axis-label','text-anchor':'end'}); t.textContent=m; svg.appendChild(t);
+}
+[0,5,10,15,20,25,30].forEach(d=>{
+  const x=X(d);
+  svg.appendChild(el('line',{x1:x,x2:x,y1:M.t,y2:H-M.b,class:'gridline'}));
+  const t=el('text',{x:x,y:H-M.b+18,class:'axis-label','text-anchor':'middle'}); t.textContent=d+' min'; svg.appendChild(t);
+});
+const xlab=el('text',{x:W/2,y:H-10,class:'axis-label','text-anchor':'middle'}); xlab.textContent="Distance / proximité depuis Armentières (minutes)"; svg.appendChild(xlab);
+const ylab=el('text',{x:18,y:H/2,class:'axis-label','text-anchor':'middle',transform:`rotate(-90 18 ${H/2})`}); ylab.textContent="Niveau de menace (0-5)"; svg.appendChild(ylab);
+
+const nodeEls = [];
+data.forEach((d,i)=>{
+  const cx=X(d.dist), cy=Y(d.menace);
+  const r = d.isInb ? 16 : 6 + d.intensite*0.9;
+  const c = el('circle',{cx,cy,r, fill: colors[d.filiere], class:'node'+(d.isInb?' inb':''), opacity: d.isInb?1:0.88, 'data-idx':i});
+  svg.appendChild(c);
+  nodeEls.push(c);
+  if(d.isInb || d.intensite>=7){
+    const lab = el('text',{x:cx, y:cy-r-6, class:'glabel','text-anchor':'middle'});
+    lab.textContent = d.isInb ? "INB (réf.)" : d.name.split(' ').slice(0,3).join(' ');
+    svg.appendChild(lab);
+  }
+});
+
+const legendDiv = document.getElementById('legend');
+let activeFilter = null;
+Object.keys(labels).forEach(k=>{
+  const chip = document.createElement('div');
+  chip.className='chip';
+  chip.dataset.key=k;
+  chip.innerHTML = `<span class="dot" style="background:${colors[k]}"></span>${labels[k]}`;
+  chip.onclick = ()=>{
+    activeFilter = (activeFilter===k) ? null : k;
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    if(activeFilter) chip.classList.add('active');
+    nodeEls.forEach((c,i)=>{
+      const d=data[i];
+      const show = !activeFilter || d.filiere===activeFilter || d.isInb;
+      c.classList.toggle('dim', !show);
+    });
+  };
+  legendDiv.appendChild(chip);
+});
+
+function showPanel(d){
+  const panel = document.getElementById('panel');
+  const stars = "★".repeat(d.menace) + "☆".repeat(5-d.menace);
+  panel.innerHTML = `
+    <span class="badge" style="background:${colors[d.filiere]}1A;color:${colors[d.filiere]};border:1px solid ${colors[d.filiere]}55">${labels[d.filiere]}</span>
+    <h3>${d.name}</h3>
+    <div class="field"><b>Ville :</b> ${d.ville}</div>
+    <div class="field"><b>Distance estimée :</b> ${d.dist===0 && d.filiere==='INDIRECT' ? 'délocalisé / en ligne' : d.dist+' min'}</div>
+    <div class="field"><b>Type d'offre :</b> ${d.type}</div>
+    <div class="field"><b>Niveau de menace :</b> <span class="stars">${stars}</span></div>
+    <div class="field" style="margin-top:10px;line-height:1.5;">${d.note}</div>
+  `;
+}
+nodeEls.forEach((c,i)=> c.addEventListener('click', ()=> showPanel(data[i])));
+showPanel(data[0]);
+
+// ===================== TABLES =====================
+function buildTable(elId, rows, includeInb){
+  const t = document.getElementById(elId);
+  let html = `<thead><tr><th>Établissement</th><th>Ville</th><th>Distance</th><th>Type d'offre</th><th>Menace</th><th>Commentaire</th></tr></thead><tbody>`;
+  if(includeInb){
+    html += `<tr class="inb-row"><td>Institut Nicolas Barré</td><td>Armentières</td><td>0 min (réf.)</td><td>${includeInb}</td><td>—</td><td>Établissement de référence</td></tr>`;
+  }
+  rows.forEach(d=>{
+    const stars = "★".repeat(d.menace) + "☆".repeat(5-d.menace);
+    html += `<tr>
+      <td>${d.name}</td>
+      <td>${d.ville}</td>
+      <td>${d.dist===0 ? 'En ligne / délocalisé' : d.dist+' min'}</td>
+      <td>${d.type}</td>
+      <td class="stars-cell">${stars}</td>
+      <td>${d.note}</td>
+    </tr>`;
+  });
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+buildTable('tbl-mco', data.filter(d=>d.filiere==='MCO'), "BTS Management Commercial Opérationnel");
+buildTable('tbl-mos', data.filter(d=>d.filiere==='MOS'), "BTS Management Opérationnel de la Sécurité");
+buildTable('tbl-mv', data.filter(d=>d.filiere==='MV'), "BTS Maintenance des Véhicules");
+buildTable('tbl-indirect', data.filter(d=>d.filiere==='INDIRECT'), false);
+
+// ===================== SCORING TABLE =====================
+// Critères : Proximité, Notoriété, Attractivité prix, Offre alternance, Capacité recrutement régional
+const scoring = [
+  {name:"Université Catholique de Lille", filiere:"MCO", prox:1, notor:5, prix:2, alt:4, recrut:5},
+  {name:"Enseignement Supérieur Saint Jude (ESSJ)", filiere:"MCO", prox:5, notor:4, prix:4, alt:4, recrut:4},
+  {name:"Lycée Paul Hazard", filiere:"MCO", prox:5, notor:3, prix:5, alt:3, recrut:4},
+  {name:"IUT de Lille (+ site Tourcoing)", filiere:"INDIRECT", prox:2, notor:5, prix:4, alt:2, recrut:5},
+  {name:"Lycée Gustave Eiffel", filiere:"MV", prox:5, notor:3, prix:5, alt:3, recrut:3},
+  {name:"Pigier Lille", filiere:"MCO", prox:2, notor:4, prix:2, alt:4, recrut:4},
+  {name:"Campus Eductive Lille", filiere:"MCO", prox:2, notor:3, prix:2, alt:3, recrut:3},
+  {name:"ESUP Lille", filiere:"MCO", prox:2, notor:3, prix:3, alt:3, recrut:3},
+  {name:"Lycée Alfred Mongy", filiere:"MV", prox:3, notor:3, prix:5, alt:4, recrut:3},
+  {name:"IDRAC Business School", filiere:"MCO", prox:2, notor:3, prix:1, alt:3, recrut:3},
+  {name:"Lycée Ozanam", filiere:"MOS", prox:2, notor:3, prix:4, alt:2, recrut:3},
+  {name:"Lycée Saint-Rémi", filiere:"MOS", prox:2, notor:3, prix:3, alt:2, recrut:3},
+  {name:"Groupe Alternance Lille", filiere:"MCO", prox:3, notor:2, prix:3, alt:5, recrut:3},
+];
+
+function buildScoreTable(){
+  const t = document.getElementById('tbl-score');
+  let html = `<thead><tr>
+    <th>Établissement</th><th>Filière</th>
+    <th style="text-align:center">Proximité</th>
+    <th style="text-align:center">Notoriété</th>
+    <th style="text-align:center">Attractivité prix</th>
+    <th style="text-align:center">Offre alternance</th>
+    <th style="text-align:center">Capacité recrutement</th>
+    <th style="text-align:center">Score /25</th>
+  </tr></thead><tbody>`;
+  html += `<tr class="inb-row">
+    <td>Institut Nicolas Barré</td><td>Référence</td>
+    <td class="score-cell">5</td><td class="score-cell">3</td><td class="score-cell">4</td><td class="score-cell">5</td><td class="score-cell">3</td>
+    <td class="score-total">20</td>
+  </tr>`;
+  scoring.sort((a,b)=> (b.prox+b.notor+b.prix+b.alt+b.recrut)-(a.prox+a.notor+a.prix+a.alt+a.recrut));
+  scoring.forEach(s=>{
+    const total = s.prox+s.notor+s.prix+s.alt+s.recrut;
+    const pillColor = colors[s.filiere];
+    html += `<tr>
+      <td>${s.name}</td>
+      <td><span class="filiere-pill" style="background:${pillColor}">${labels[s.filiere]}</span></td>
+      <td class="score-cell">${s.prox}</td>
+      <td class="score-cell">${s.notor}</td>
+      <td class="score-cell">${s.prix}</td>
+      <td class="score-cell">${s.alt}</td>
+      <td class="score-cell">${s.recrut}</td>
+      <td class="score-total">${total}</td>
+    </tr>`;
+  });
+  html += `</tbody>`;
+  t.innerHTML = html;
+}
+buildScoreTable();
+</script>
+</body>
+</html>
